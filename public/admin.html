@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CREDIAN | Dashboard Administrador</title>
+    <link rel="icon" href="img/credian.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+</head>
+
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar glass-panel"
+            style="border-radius: 0; border: none; border-right: 1px solid rgba(255,255,255,0.2);">
+            <div class="sidebar-header">
+                <h2>CREDIAN</h2>
+                <p>Administrador</p>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" class="active" id="nav-overview">Vista General</a></li>
+                <li><a href="#" id="nav-companies">Gestión de Empresas</a></li>
+                <li><a href="#" id="nav-reports">Reportes</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1 id="page-title">Vista General</h1>
+                <div class="user-info">
+                    <span id="user-name">Cargando...</span>
+                    <button class="btn btn-outline logout-btn">Cerrar Sesión</button>
+                </div>
+            </header>
+
+            <div id="alert-box" class="alert hidden"></div>
+
+            <!-- Overview View -->
+            <div id="view-overview">
+                <!-- Stats Grid -->
+                <div class="dashboard-grid">
+                    <div class="stat-card glass-panel">
+                        <h3>Total Empresas</h3>
+                        <div class="value" id="stat-companies">-</div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <h3>Empresas con Cotización</h3>
+                        <div class="value" id="stat-quoted" style="color: var(--success);">-</div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <h3>Solo Ingresaron Sin Cotizar</h3>
+                        <div class="value" id="stat-not-quoted" style="color: var(--danger);">-</div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <h3>Cotizaciones Generadas</h3>
+                        <div class="value" id="stat-quotes">-</div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <h3>Sesiones Activas (24h)</h3>
+                        <div class="value" id="stat-sessions">-</div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="glass-panel" style="padding: 2rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>Actividad Reciente</h3>
+                    </div>
+
+                    <div class="table-container" style="margin-top: 1rem;">
+                        <table id="activity-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Empresa</th>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Detalles</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated closely via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Companies View -->
+            <div id="view-companies" style="display: none;">
+                <!-- Registrar Empresa -->
+                <div class="glass-panel" style="padding: 2rem; margin-bottom: 2rem;">
+                    <h3>Registrar Nueva Empresa</h3>
+                    <p style="margin: 1rem 0;">Da de alta a una nueva empresa para permitirles cotizar.</p>
+                    <form id="form-create-company" style="display:flex; gap:10px; align-items:flex-start;">
+                        <input type="text" id="new-company-name" placeholder="Nombre de la Empresa" required
+                            style="flex:1;">
+                        <input type="email" id="new-company-email" placeholder="Correo Electrónico" required
+                            style="flex:1;">
+                        <button type="submit" class="btn btn-primary" style="padding:0.75rem 2rem;">Crear
+                            Empresa</button>
+                    </form>
+                    <div id="create-company-result"
+                        style="display:none; margin-top:15px; padding:20px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; text-align:left;">
+                        <p style="color:#166534; font-weight:bold; margin-bottom:12px; font-size:16px;">✅ ¡Empresa
+                            Creada Exitosamente!</p>
+                        <p style="margin-bottom:5px;"><strong>Correo:</strong> <span id="created-email"></span></p>
+                        <div style="display:flex; align-items:center; gap:10px; margin:10px 0;">
+                            <strong>Contraseña:</strong>
+                            <code id="created-password"
+                                style="background:#fff; padding:6px 14px; border-radius:6px; border:1px solid #ccc; font-size:16px; font-weight:600; letter-spacing:1px;"></code>
+                            <button type="button" id="btn-copy-password" class="btn btn-secondary"
+                                style="padding:6px 14px; font-size:13px; display:flex; align-items:center; gap:5px;"
+                                title="Copiar contraseña">
+                                📋 Copiar
+                            </button>
+                        </div>
+                        <div style="display:flex; gap:10px; margin-top:15px;">
+                            <button type="button" id="btn-send-email" class="btn btn-primary"
+                                style="padding:8px 20px; font-size:13px; display:flex; align-items:center; gap:6px;">
+                                ✉️ Enviar Credenciales por Correo
+                            </button>
+                        </div>
+                        <p id="email-send-status"
+                            style="display:none; margin-top:10px; font-size:13px; padding:8px 12px; border-radius:6px;">
+                        </p>
+                        <p style="font-size:12px; color:#14532d; margin-top:12px; opacity:0.8;">Por seguridad, la
+                            contraseña no se volverá a mostrar en el panel.</p>
+                    </div>
+                </div>
+
+                <!-- Directory -->
+                <div class="glass-panel" style="padding: 2rem;">
+                    <h3>Directorio de Empresas</h3>
+                    <div class="table-container" style="margin-top: 1rem;">
+                        <table id="companies-table">
+                            <thead>
+                                <tr>
+                                    <th>Empresa</th>
+                                    <th>Correo Electrónico</th>
+                                    <th>Fecha Registro</th>
+                                    <th style="text-align:center;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports View -->
+            <div id="view-reports" style="display: none;">
+                <div class="dashboard-grid">
+                    <div class="glass-panel" style="padding: 2rem; text-align:center;">
+                        <h3>Reporte Ejecutivo</h3>
+                        <p style="margin: 1rem 0;">Genera un documento PDF estructurado de la actividad global
+                            impregnado con tu hoja membretada.</p>
+                        <button id="btn-report-pdf" class="btn btn-primary" style="width:100%;">Descargar Reporte
+                            PDF</button>
+                    </div>
+
+                    <div class="glass-panel" style="padding: 2rem; text-align:center;">
+                        <h3>Registro Crudo (Actividad)</h3>
+                        <p style="margin: 1rem 0;">Descarga toda la meta-información original para crucar en Excel
+                            (.csv).</p>
+                        <a href="/api/admin/activities.csv" class="btn btn-secondary"
+                            style="width:100%; margin-bottom:10px;" download>Descargar CSV Actividad</a>
+                        <a href="/api/admin/quotes.csv" class="btn btn-outline" style="width:100%;" download>Descargar
+                            CSV Cotizaciones</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="print-container"
+                style="position: absolute; left: -9999px; top: 0; width: 800px; min-height: 1120px; background: transparent; padding: 160px 60px 80px 60px; box-sizing: border-box; font-family: Arial, sans-serif; color: black;">
+                <!-- Filled via JS before calling html2canvas -->
+            </div>
+
+            <!-- Edit Company Modal -->
+            <div id="modal-edit-company" class="modal-overlay" style="display:none;">
+                <div class="modal-backdrop" onclick="document.getElementById('modal-edit-company').style.display='none'; document.getElementById('edit-company-result').style.display='none';"></div>
+                <div class="modal-card">
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <div class="modal-header-icon">✏️</div>
+                        <div>
+                            <h3 style="margin:0; color:#fff; font-size:18px;">Editar Empresa</h3>
+                            <p style="margin:0; color:rgba(255,255,255,0.7); font-size:13px;">Modifica los datos de acceso de la empresa</p>
+                        </div>
+                        <button type="button" class="modal-close-btn" onclick="document.getElementById('modal-edit-company').style.display='none'; document.getElementById('edit-company-result').style.display='none';">&times;</button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <form id="form-edit-company" class="modal-body">
+                        <input type="hidden" id="edit-company-id">
+
+                        <div class="modal-field">
+                            <label class="modal-label">
+                                <span class="modal-label-icon">🏢</span> Nombre de la Empresa
+                            </label>
+                            <input type="text" id="edit-company-name" required placeholder="Ej: Audi Motors">
+                        </div>
+
+                        <div class="modal-field">
+                            <label class="modal-label">
+                                <span class="modal-label-icon">📧</span> Correo Electrónico
+                            </label>
+                            <input type="email" id="edit-company-email" required placeholder="empresa@ejemplo.com">
+                        </div>
+
+                        <div class="modal-divider"></div>
+
+                        <label class="modal-checkbox-label" for="edit-reset-password">
+                            <input type="checkbox" id="edit-reset-password">
+                            <span class="modal-checkbox-custom"></span>
+                            <span class="modal-checkbox-text">
+                                <strong>Generar nueva contraseña</strong>
+                                <small>Se reemplazará la contraseña actual por una nueva aleatoria</small>
+                            </span>
+                        </label>
+
+                        <!-- Credentials Result (shown after save with password reset) -->
+                        <div id="edit-company-result" class="modal-credentials" style="display:none;">
+                            <div class="modal-credentials-header">
+                                <span class="modal-credentials-badge">✅ Actualizado</span>
+                            </div>
+                            <div class="modal-credentials-grid">
+                                <div class="modal-credential-item">
+                                    <span class="modal-credential-label">Correo</span>
+                                    <span class="modal-credential-value" id="edited-email"></span>
+                                </div>
+                                <div class="modal-credential-item">
+                                    <span class="modal-credential-label">Nueva Contraseña</span>
+                                    <div class="modal-credential-pw-row">
+                                        <code class="modal-credential-code" id="edited-password"></code>
+                                        <button type="button" id="btn-copy-edited-password" class="modal-btn-icon" title="Copiar contraseña">📋</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" id="btn-send-edited-email" class="modal-btn-send">
+                                ✉️ Enviar nuevas credenciales por correo
+                            </button>
+                            <p class="modal-credentials-note">⚠️ Guarda esta contraseña, no se volverá a mostrar.</p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="modal-actions">
+                            <button type="button" class="modal-btn-cancel" onclick="document.getElementById('modal-edit-company').style.display='none'; document.getElementById('edit-company-result').style.display='none';">Cancelar</button>
+                            <button type="submit" class="modal-btn-save" id="btn-save-company">
+                                💾 Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CREDIAN | Dashboard Empresa</title>
+    <link rel="icon" href="img/credian.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+</head>
+
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar glass-panel"
+            style="border-radius: 0; border: none; border-right: 1px solid rgba(255,255,255,0.2);">
+            <div class="sidebar-header">
+                <h2>CREDIAN</h2>
+                <p>Empresa</p>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" class="active" id="nav-new-quote">Nueva Cotización</a></li>
+                <li><a href="#" id="nav-history">Historial</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1 id="page-title">Nueva Cotización</h1>
+                <div class="user-info">
+                    <span id="user-name">Cargando...</span>
+                    <button class="btn btn-outline logout-btn">Cerrar Sesión</button>
+                </div>
+            </header>
+
+            <div id="alert-box" class="alert hidden"></div>
+
+            <!-- New Quote View -->
+            <div id="view-new-quote">
+                <div class="glass-panel" style="padding: 2rem;">
+                    <form id="quote-form">
+                        <h3>Datos Generales</h3>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label>Cliente</label>
+                                <input type="text" id="q-client" style="background-color: #e2e8f0; color: #475569; cursor: not-allowed; font-weight: bold;" disabled required>
+                            </div>
+                            <div class="form-group">
+                                <label>Activo</label>
+                                <input type="text" id="q-asset" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo</label>
+                                <input type="text" id="q-type" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Descripción</label>
+                                <input type="text" id="q-description" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo de Valor Factura</label>
+                                <select id="q-invoiceValueType">
+                                    <option value="calculada">Calculada (El precio NO incluye IVA)</option>
+                                    <option value="desglosada">Desglosada (El precio YA incluye IVA)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Valor del Equipo</label>
+                                <input type="number" id="q-invoiceValue" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Moneda</label>
+                                <select id="q-currency">
+                                    <option value="Pesos">Pesos</option>
+                                    <option value="Dólares">Dólares</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <h3 style="margin-top: 2rem;">Condiciones Financieras</h3>
+                        <div class="grid-3">
+                            <div class="form-group">
+                                <label>Enganche</label>
+                                <select id="q-downpayment" required>
+                                    <option value="0.10">10%</option>
+                                    <option value="0.15">15%</option>
+                                    <option value="0.25">25%</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Cotiza el Seguro</label>
+                                <input type="number" id="q-insurance" step="0.01" value="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Plazo a Cotizar (Meses)</label>
+                                <select id="q-months" required>
+                                    <option value="12">12 Meses</option>
+                                    <option value="24">24 Meses</option>
+                                    <option value="36">36 Meses</option>
+                                    <option value="48">48 Meses</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid-2" style="margin-top:1rem;">
+                            <div class="form-group">
+                                <label>Tasa de Interés Anual (%)</label>
+                                <input type="number" id="q-interestRate" step="0.1" value="30" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Base del Año</label>
+                                <select id="q-yearBase" required>
+                                    <option value="360">Año Comercial / Fiscal (360 días)</option>
+                                    <option value="365">Año Natural (365 días)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel"
+                            style="margin-top: 2rem; background: #f8fafc; padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+                            <h4 style="margin-bottom: 1rem; color: #104289;">Resumen Automático</h4>
+                            <div class="grid-2">
+                                <div>
+                                    <p style="font-size: 14px; color: #64748b; margin-bottom: 5px;">Pago Inicial Total
+                                        (Com. + Seguro + IVA)</p>
+                                    <p style="font-size: 20px; font-weight: bold; color: #0f172a;"
+                                        id="preview-initial-payment">$0.00</p>
+                                </div>
+                                <div>
+                                    <p style="font-size: 14px; color: #64748b; margin-bottom: 5px;">Renta Mensual Total
+                                        (Inc. IVA) a <span id="preview-months">12</span> Meses</p>
+                                    <p style="font-size: 20px; font-weight: bold; color: #3ca65a;"
+                                        id="preview-monthly-payment">$0.00</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="amortization-table-container" style="margin-top: 2rem; display: none;">
+                            <h4 style="margin-bottom: 1rem; color: #104289;">Tabla de Amortización</h4>
+                            <div class="table-container">
+                                <table id="amortization-table" class="companies-table" style="font-size: 13px;">
+                                    <thead>
+                                        <tr>
+                                            <th>Mes</th>
+                                            <th style="text-align:right">Saldo Inicial</th>
+                                            <th style="text-align:right">Pago</th>
+                                            <th style="text-align:right">Interés</th>
+                                            <th style="text-align:right">Capital</th>
+                                            <th style="text-align:right">Saldo Final</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Javascript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 2rem; text-align: right;">
+                            <button type="submit" class="btn btn-primary" id="btn-save-quote">Guardar y Generar
+                                PDF</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- History View -->
+            <div id="view-history" style="display: none;">
+                <div class="glass-panel" style="padding: 2rem;">
+                    <h3>Cotizaciones Anteriores</h3>
+                    <div class="table-container" style="margin-top: 1rem;">
+                        <table id="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Activo</th>
+                                    <th>Valor Factura</th>
+                                    <th>Moneda</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated closely via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden Printable PDF Container template to be filled and printed dynamically -->
+            <div id="print-container"
+                style="position: absolute; left: -9999px; top: 0; width: 800px; min-height: 1120px; background: transparent; padding: 160px 60px 80px 60px; box-sizing: border-box; font-family: Arial, sans-serif; color: black;">
+                <!-- Filled via JS before calling html2pdf/jspdf html2canvas -->
+            </div>
+
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/company.js"></script>
+</body>
+
+</html>
