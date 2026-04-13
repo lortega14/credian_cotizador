@@ -17,9 +17,14 @@
     <div class="dashboard-layout">
         <aside class="sidebar glass-panel"
             style="border-radius: 0; border: none; border-right: 1px solid rgba(255,255,255,0.2);">
-            <div class="sidebar-header">
-                <h2>CREDIAN</h2>
-                <p>Empresa</p>
+            <div class="sidebar-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                <div class="sidebar-titles">
+                    <h2>CREDIAN</h2>
+                    <p>Empresa</p>
+                </div>
+                <button id="menu-toggle" style="background: transparent; border: 1px solid rgba(255,255,255,0.4); border-radius: 8px; width: 36px; height: 36px; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;" title="Ocultar/Mostrar Menú">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
             </div>
             <ul class="nav-links">
                 <li><a href="#" class="active" id="nav-new-quote">Nueva Cotización</a></li>
@@ -202,6 +207,17 @@
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/company.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('collapsed');
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>
