@@ -818,27 +818,42 @@ tr:last-child td {
   }
   
   .sidebar {
-    width: 100%;
+    width: 100% !important;
     padding: 1rem;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
   }
 
   .sidebar-header {
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    width: 100%;
-    text-align: center;
-  }
-
-  .nav-links {
+    margin-bottom: 0;
+    padding-bottom: 0;
     width: 100%;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: none;
+  }
+
+  /* Mobile Collapsed State */
+  .sidebar.collapsed .nav-links {
+    display: none !important;
+  }
+
+  /* Mobile Expanded State */
+  .sidebar:not(.collapsed) .nav-links {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 1rem;
     gap: 0.5rem;
   }
   
+  .sidebar:not(.collapsed) .sidebar-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+
   .nav-links li {
     margin-bottom: 0;
   }
@@ -883,13 +898,39 @@ tr:last-child td {
     overflow-x: auto;
     white-space: nowrap;
   }
+}
 
-  .nav-links {
-    flex-direction: column;
-    align-items: stretch;
+/* ============================================
+   SIDEBAR TOGGLE (DESKTOP)
+   ============================================ */
+@media (min-width: 769px) {
+  .sidebar {
+    transition: width 0.3s ease, padding 0.3s ease;
+    overflow: hidden;
+    white-space: nowrap;
   }
 
-  .nav-links a {
-    text-align: center;
+  .sidebar.collapsed {
+    width: 76px !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    display: flex !important;
+  }
+
+  .sidebar.collapsed .sidebar-titles,
+  .sidebar.collapsed .nav-links {
+    display: none !important;
+  }
+
+  .sidebar.collapsed .sidebar-header {
+    justify-content: center !important;
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+    width: 100%;
+  }
+
+  .sidebar.collapsed #menu-toggle {
+    margin: 0 auto;
   }
 }
