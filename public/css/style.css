@@ -799,3 +799,97 @@ tr:last-child td {
   cursor: wait;
   transform: none;
 }
+
+/* ============================================
+   RESPONSIVE DESIGN (Media Queries)
+   ============================================ */
+
+/* Tablet & Smaller Screens (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .terms-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Tablet Portrait & Mobile Landscape (max-width: 768px) */
+@media (max-width: 768px) {
+  .dashboard-layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    padding: 1rem;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .sidebar-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  .nav-links {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .nav-links li {
+    margin-bottom: 0;
+  }
+
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .top-bar {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .user-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Mobile Phones (max-width: 480px) */
+@media (max-width: 480px) {
+  .terms-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-card {
+    width: 95%;
+    max-width: 100%;
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+  
+  .stat-card {
+    padding: 1rem;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .nav-links a {
+    text-align: center;
+  }
+}
