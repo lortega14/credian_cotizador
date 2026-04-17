@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         document.getElementById('preview-initial-payment').textContent = `$${initialPaymentTotal.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-        document.getElementById('preview-monthly-payment').textContent = `$${totalMonthlyRent.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        document.getElementById('preview-monthly-payment').innerHTML = `$${baseMonthlyRent.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})} <span style="font-size: 14px; font-weight: 500; color: #64748b;">+ IVA = $${totalMonthlyRent.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>`;
         const previewMonthsTag = document.getElementById('preview-months');
         if (previewMonthsTag) previewMonthsTag.textContent = months;
     }
