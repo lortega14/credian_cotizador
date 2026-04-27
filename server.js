@@ -11,6 +11,9 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy — required for Vercel (secure cookies behind reverse proxy)
+app.set('trust proxy', 1);
+
 // Security Middleware
 app.use(helmet({
   contentSecurityPolicy: false, // Disabling for simplicity in dev, configure properly in prod
@@ -56,7 +59,7 @@ app.use(session({
     maxAge: 1000 * 60 * 60 * 24, // 1 day
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    sameSite: 'lax'
   }
 }));
 
