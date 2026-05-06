@@ -36,10 +36,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadQuotes();
     });
 
-    // Financial Math Helper
-    function calculatePMT(ir, np, pv) {
-        if (ir === 0) return pv / np;
-        return pv * (ir * Math.pow(1 + ir, np)) / (Math.pow(1 + ir, np) - 1);
+    // Financial Math Helper — supports optional future value (balloon/residual)
+    function calculatePMT(ir, np, pv, fv) {
+        fv = fv || 0;
+        if (ir === 0) return (pv - fv) / np;
+        const factor = Math.pow(1 + ir, np);
+        return (pv * ir * factor - fv * ir) / (factor - 1);
     }
 
     // Live Auto-Calculation Preview
@@ -51,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const months = parseInt(document.getElementById('q-months').value) || 12;
         const annualInterest = parseFloat(document.getElementById('q-interestRate').value) || 30;
         const yearBase = parseInt(document.getElementById('q-yearBase').value) || 360;
+        const residualValue = parseFloat(document.getElementById('q-residualValue').value) || 0;
 
         let invoiceSubtotal = 0;
         let invoiceTotal = 0;
@@ -70,6 +73,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const initialPaymentTotal = engancheMonto + extraSubtotal + extraIva;
 
         const amountToFinance = invoiceTotal - engancheMonto;
+        const residualIva = residualValue * 0.16;
+        const residualTotal = residualValue + residualIva;
         let totalMonthlyRent = 0;
         let baseMonthlyRent = 0;
         let amortizationRows = '';
@@ -79,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (amountToFinance > 0) {
             const r = ((annualInterest / 100) / yearBase) * 30;
-            baseMonthlyRent = calculatePMT(r, months, amountToFinance);
+            baseMonthlyRent = calculatePMT(r, months, amountToFinance, residualValue);
             totalMonthlyRent = baseMonthlyRent * 1.16; // Add IVA to monthly payment
 
             let balance = amountToFinance;
@@ -87,9 +92,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const interest = balance * r;
                 let principal = baseMonthlyRent - interest;
 
-                // Handle exact 0 balance on last month
+                // On last month, principal pays down to residual value
                 if (i === months) {
-                    principal = balance;
+                    principal = balance - residualValue;
                 }
 
                 const endBalance = balance - principal;
@@ -116,11 +121,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         document.getElementById('preview-initial-payment').textContent = `$${initialPaymentTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         document.getElementById('preview-monthly-payment').innerHTML = `$${baseMonthlyRent.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style="font-size: 14px; font-weight: 500; color: #64748b;">+ IVA = $${totalMonthlyRent.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`;
+        document.getElementById('preview-residual-value').textContent = `$${residualTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         const previewMonthsTag = document.getElementById('preview-months');
         if (previewMonthsTag) previewMonthsTag.textContent = months;
     }
 
-    const inputsToWatch = document.querySelectorAll('#q-invoiceValue, #q-invoiceValueType, #q-downpayment, #q-insurance, #q-months, #q-interestRate, #q-yearBase');
+    const inputsToWatch = document.querySelectorAll('#q-invoiceValue, #q-invoiceValueType, #q-downpayment, #q-insurance, #q-months, #q-interestRate, #q-yearBase, #q-residualValue');
     inputsToWatch.forEach(input => input.addEventListener('input', calculateLivePreview));
     inputsToWatch.forEach(input => input.addEventListener('change', calculateLivePreview));
 
@@ -141,6 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const months = parseInt(document.getElementById('q-months').value) || 12;
             const annualInterest = parseFloat(document.getElementById('q-interestRate').value) || 30;
             const yearBase = parseInt(document.getElementById('q-yearBase').value) || 360;
+            const residualValue = parseFloat(document.getElementById('q-residualValue').value) || 0;
 
             let invoiceSubtotal = 0;
             let invoiceTotal = 0;
@@ -164,7 +171,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             let totalMonthlyRent = 0;
             if (amountToFinance > 0) {
                 const r = ((annualInterest / 100) / yearBase) * 30;
-                const baseMonthlyRent = calculatePMT(r, months, amountToFinance);
+                const baseMonthlyRent = calculatePMT(r, months, amountToFinance, residualValue);
                 totalMonthlyRent = baseMonthlyRent * 1.16;
             }
 
@@ -192,8 +199,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 monthlyRent: totalMonthlyRent / 1.16, // Subtotal interest+capital
                 monthlyRentIva: totalMonthlyRent - (totalMonthlyRent / 1.16),
                 totalMonthlyRent: totalMonthlyRent,
-                residualValue: amountToFinance, // Used to store Monto a Financiar
-                residualIva: 0,
+                residualValue: amountToFinance, // Store Monto a Financiar
+                residualIva: residualValue, // Store actual residual value amount
                 netResidualValue: annualInterest, // Store interest rate
                 estimatedIsrSaving: dpPercent // Store downpayment percent
             };
@@ -202,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert('Cotización guardada exitosamente. Generando PDF...');
 
             // Generate PDF logic passing custom extras
-            generatePDF({ ...data.quote, insuranceAmount: insurance, valueType: valueType }, user);
+            generatePDF({ ...data.quote, insuranceAmount: insurance, valueType: valueType, residualAmount: residualValue, montoAFinanciar: amountToFinance }, user);
 
             // Reset form
             form.reset();
@@ -263,6 +270,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const yearBase = t.extraordinaryCommission || 360; // Retrieved from extraordinaryCommission workaround
         const engancheMonto = t.firstRent; // Retrieved from firstRent workaround
         const amountToFinance = t.residualValue; // Retrieved from residualValue workaround
+        const residualAmount = quote.residualAmount !== undefined ? quote.residualAmount : (t.residualIva || 0); // Actual residual value
+        const residualIva = residualAmount * 0.16;
+        const residualTotal = residualAmount + residualIva;
         const dpPercent = t.estimatedIsrSaving;
         const dpPercentText = (dpPercent * 100).toFixed(0) + '%';
         const selectedMonths = t.months;
@@ -280,7 +290,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             let rentWithIva = 0;
 
             if (amountToFinance > 0) {
-                baseRent = calculatePMT(r, termMonths, amountToFinance);
+                baseRent = calculatePMT(r, termMonths, amountToFinance, residualAmount);
                 rentWithIva = baseRent * 1.16;
             }
 
@@ -311,13 +321,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (amountToFinance > 0) {
             const r = ((annualInterest / 100) / yearBase) * 30;
             const months = t.months;
-            const baseMonthlyRent = calculatePMT(r, months, amountToFinance);
+            const baseMonthlyRent = calculatePMT(r, months, amountToFinance, residualAmount);
 
             let balance = amountToFinance;
             for (let i = 1; i <= months; i++) {
                 const interest = balance * r;
                 let principal = baseMonthlyRent - interest;
-                if (i === months) principal = balance;
+                if (i === months) principal = balance - residualAmount;
                 const endBalance = balance - principal;
 
                 amortizationRowsHTML += `
@@ -395,6 +405,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Renta Mensual</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(t.monthlyRent)}</td></tr>
                             <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">IVA de la Renta</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right;">$${fmt(t.monthlyRentIva)}</td></tr>
                             <tr><td style="padding:6px; background:#f0f9ff; font-weight:bold;">TOTAL MENSUAL</td><td style="padding:6px; background:#f0f9ff; text-align:right; font-weight:bold; color:#3ca65a;">$${fmt(t.totalMonthlyRent)}</td></tr>
+                            ${residualAmount > 0 ? `
+                            <tr><td colspan="2" style="padding:8px 4px 2px; border-top:2px solid #e2e8f0;"></td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Valor Residual</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(residualAmount)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">IVA Valor Residual</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right;">$${fmt(residualIva)}</td></tr>
+                            <tr><td style="padding:6px; background:#fef3c7; font-weight:bold;">TOTAL RESIDUAL</td><td style="padding:6px; background:#fef3c7; text-align:right; font-weight:bold; color:#92400e;">$${fmt(residualTotal)}</td></tr>
+                            ` : ''}
                         </table>
                     </td>
                 </tr>
