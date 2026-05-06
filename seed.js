@@ -1,8 +1,9 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
 
-const uri = 'mongodb://localhost:27017/credian_cotizador';
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/credian_cotizador';
 
 mongoose.connect(uri).then(async () => {
   console.log('Connected. Seeding DB...');
