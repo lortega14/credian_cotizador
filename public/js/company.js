@@ -44,16 +44,65 @@ document.addEventListener('DOMContentLoaded', async () => {
         return (pv * ir * factor - fv * ir) / (factor - 1);
     }
 
+    // Monthly interest rate helper
+    // Año Comercial (360): 30 días por mes → tasa diaria * 30
+    // Año Natural (365): 30.4167 días promedio por mes (365/12) → tasa diaria * 30.4167
+    function getMonthlyRate(annualRate, yearBase) {
+        const daysPerMonth = yearBase === 365 ? (365 / 12) : 30;
+        return ((annualRate / 100) / yearBase) * daysPerMonth;
+    }
+
+    // ── Money Formatting Helpers ──
+    // Strips $, commas, spaces to get raw number
+    function parseMoney(val) {
+        if (!val) return 0;
+        return parseFloat(String(val).replace(/[\$,\s]/g, '')) || 0;
+    }
+
+    // Formats a number as $1,234,567.89
+    function toMoneyString(n) {
+        if (isNaN(n) || n === 0) return '';
+        return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Live-format a money input on blur (when user leaves the field)
+    function formatMoneyInput(e) {
+        const input = e.target;
+        const raw = parseMoney(input.value);
+        if (raw > 0) {
+            input.value = toMoneyString(raw);
+        } else {
+            input.value = '';
+        }
+    }
+
+    // Strip formatting when user focuses (so they can edit the raw number)
+    function unformatMoneyInput(e) {
+        const input = e.target;
+        const raw = parseMoney(input.value);
+        if (raw > 0) {
+            input.value = raw.toString();
+        } else {
+            input.value = '';
+        }
+    }
+
+    // Attach money formatting to all currency inputs
+    const moneyInputs = document.querySelectorAll('#q-invoiceValue, #q-insurance, #q-residualValue');
+    moneyInputs.forEach(input => {
+        input.addEventListener('blur', formatMoneyInput);
+        input.addEventListener('focus', unformatMoneyInput);
+    });
+
     // Live Auto-Calculation Preview
     function calculateLivePreview() {
-        const rawValue = parseFloat(document.getElementById('q-invoiceValue').value) || 0;
+        const rawValue = parseMoney(document.getElementById('q-invoiceValue').value);
         const valueType = document.getElementById('q-invoiceValueType').value;
         const dpPercent = parseFloat(document.getElementById('q-downpayment').value) || 0.10;
-        const insurance = parseFloat(document.getElementById('q-insurance').value) || 0;
+        const insurance = parseMoney(document.getElementById('q-insurance').value);
         const months = parseInt(document.getElementById('q-months').value) || 12;
         const annualInterest = parseFloat(document.getElementById('q-interestRate').value) || 30;
         const yearBase = parseInt(document.getElementById('q-yearBase').value) || 360;
-        const residualValue = parseFloat(document.getElementById('q-residualValue').value) || 0;
 
         let invoiceSubtotal = 0;
         let invoiceTotal = 0;
@@ -66,13 +115,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             invoiceSubtotal = rawValue / 1.16;
         }
 
-        const engancheMonto = invoiceTotal * dpPercent;
-        const commissionSubtotal = invoiceSubtotal * 0.03;
-        const extraSubtotal = commissionSubtotal + insurance;
-        const extraIva = extraSubtotal * 0.16;
-        const initialPaymentTotal = engancheMonto + extraSubtotal + extraIva;
+        let resPct = 0.20;
+        if (months === 12) resPct = 0.38;
+        else if (months === 18) resPct = 0.30;
+        else if (months === 24) resPct = 0.26;
+        else if (months === 36) resPct = 0.20;
+        else if (months === 48) resPct = 0.15;
+        else if (months === 60) resPct = 0.10;
 
-        const amountToFinance = invoiceTotal - engancheMonto;
+        const residualValue = invoiceSubtotal * resPct;
+
+        const qResidualInput = document.getElementById('q-residualValue');
+        if (qResidualInput) {
+            qResidualInput.value = toMoneyString(residualValue);
+        }
+
+        // Enganche se calcula sobre el SUBTOTAL (sin IVA), como en arrendamiento
+        const engancheSubtotal = invoiceSubtotal * dpPercent;
+        const engancheIva = engancheSubtotal * 0.16;
+        const engancheTotal = engancheSubtotal + engancheIva;
+        const commissionSubtotal = invoiceSubtotal * 0.03;
+        // Pago inicial = enganche + comisión + seguro, todo + IVA
+        const pagoInicialSubtotal = engancheSubtotal + commissionSubtotal + insurance;
+        const pagoInicialIva = pagoInicialSubtotal * 0.16;
+        const initialPaymentTotal = pagoInicialSubtotal + pagoInicialIva;
+
+        // Se financia el SUBTOTAL menos el enganche (sin IVA)
+        const amountToFinance = invoiceSubtotal - engancheSubtotal;
         const residualIva = residualValue * 0.16;
         const residualTotal = residualValue + residualIva;
         let totalMonthlyRent = 0;
@@ -83,7 +152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const tableBody = document.querySelector('#amortization-table tbody');
 
         if (amountToFinance > 0) {
-            const r = ((annualInterest / 100) / yearBase) * 30;
+            const r = getMonthlyRate(annualInterest, yearBase);
             baseMonthlyRent = calculatePMT(r, months, amountToFinance, residualValue);
             totalMonthlyRent = baseMonthlyRent * 1.16; // Add IVA to monthly payment
 
@@ -140,14 +209,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnSave.textContent = 'Procesando...';
 
         try {
-            const rawValue = parseFloat(document.getElementById('q-invoiceValue').value) || 0;
+            const rawValue = parseMoney(document.getElementById('q-invoiceValue').value);
             const valueType = document.getElementById('q-invoiceValueType').value;
             const dpPercent = parseFloat(document.getElementById('q-downpayment').value) || 0.10;
-            const insurance = parseFloat(document.getElementById('q-insurance').value) || 0;
+            const insurance = parseMoney(document.getElementById('q-insurance').value);
             const months = parseInt(document.getElementById('q-months').value) || 12;
             const annualInterest = parseFloat(document.getElementById('q-interestRate').value) || 30;
             const yearBase = parseInt(document.getElementById('q-yearBase').value) || 360;
-            const residualValue = parseFloat(document.getElementById('q-residualValue').value) || 0;
+            const residualValue = parseMoney(document.getElementById('q-residualValue').value);
 
             let invoiceSubtotal = 0;
             let invoiceTotal = 0;
@@ -160,17 +229,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 invoiceSubtotal = rawValue / 1.16;
             }
 
-            const engancheMonto = invoiceTotal * dpPercent;
+            // Enganche sobre SUBTOTAL
+            const engancheSubtotal = invoiceSubtotal * dpPercent;
+            const engancheIva = engancheSubtotal * 0.16;
+            const engancheTotal = engancheSubtotal + engancheIva;
             const commissionSubtotal = invoiceSubtotal * 0.03;
-            const extraSubtotal = commissionSubtotal + insurance;
-            const extraIva = extraSubtotal * 0.16;
-            const initialPaymentTotal = engancheMonto + extraSubtotal + extraIva;
+            const pagoInicialSubtotal = engancheSubtotal + commissionSubtotal + insurance;
+            const pagoInicialIva = pagoInicialSubtotal * 0.16;
+            const initialPaymentTotal = pagoInicialSubtotal + pagoInicialIva;
 
-            const amountToFinance = invoiceTotal - engancheMonto;
+            // Financiar SUBTOTAL - enganche
+            const amountToFinance = invoiceSubtotal - engancheSubtotal;
 
             let totalMonthlyRent = 0;
             if (amountToFinance > 0) {
-                const r = ((annualInterest / 100) / yearBase) * 30;
+                const r = getMonthlyRate(annualInterest, yearBase);
                 const baseMonthlyRent = calculatePMT(r, months, amountToFinance, residualValue);
                 totalMonthlyRent = baseMonthlyRent * 1.16;
             }
@@ -191,10 +264,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const termData = {
                 months: months,
                 extraordinaryCommission: yearBase, // Using this numeric field to store yearBase for PDF rendering
-                firstRent: engancheMonto, // Using firstRent to store Enganche for DB
+                firstRent: engancheSubtotal, // Using firstRent to store Enganche subtotal for DB
                 openingCommission: commissionSubtotal,
-                paymentSubtotal: extraSubtotal,
-                paymentIva: extraIva,
+                paymentSubtotal: pagoInicialSubtotal - engancheSubtotal, // comisión + seguro subtotal
+                paymentIva: pagoInicialIva,
                 initialPaymentTotal: initialPaymentTotal,
                 monthlyRent: totalMonthlyRent / 1.16, // Subtotal interest+capital
                 monthlyRentIva: totalMonthlyRent - (totalMonthlyRent / 1.16),
@@ -213,6 +286,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Reset form
             form.reset();
+            // Re-fill client name (form.reset clears disabled fields too)
+            if (qClient) qClient.value = user.companyName || user.name;
             calculateLivePreview();
             navHistory.click();
 
@@ -268,7 +343,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const insurance = quote.insuranceAmount !== undefined ? quote.insuranceAmount : (t.paymentSubtotal - t.openingCommission);
         const annualInterest = t.netResidualValue || 30; // Retrieved from netResidualValue workaround
         const yearBase = t.extraordinaryCommission || 360; // Retrieved from extraordinaryCommission workaround
-        const engancheMonto = t.firstRent; // Retrieved from firstRent workaround
+        const engancheSubtotal = t.firstRent; // Retrieved from firstRent workaround (now stores subtotal)
+        const engancheIva = engancheSubtotal * 0.16;
+        const engancheTotal = engancheSubtotal + engancheIva;
         const amountToFinance = t.residualValue; // Retrieved from residualValue workaround
         const residualAmount = quote.residualAmount !== undefined ? quote.residualAmount : (t.residualIva || 0); // Actual residual value
         const residualIva = residualAmount * 0.16;
@@ -279,18 +356,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         const invoiceTotal = generalData.invoiceValue;
 
         // ── Calcular comparativo para TODOS los plazos disponibles ──
-        const allTerms = [12, 24, 36, 48];
+        const allTerms = [12, 18, 24, 36, 48, 60];
         const fmt = (n) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         let comparisonRowsHTML = '';
         allTerms.forEach(termMonths => {
             const isSelected = termMonths === selectedMonths;
-            const r = ((annualInterest / 100) / yearBase) * 30;
+            const r = getMonthlyRate(annualInterest, yearBase);
             let baseRent = 0;
             let rentWithIva = 0;
 
+            let resPct = 0.20;
+            if (termMonths === 12) resPct = 0.38;
+            else if (termMonths === 18) resPct = 0.30;
+            else if (termMonths === 24) resPct = 0.26;
+            else if (termMonths === 36) resPct = 0.20;
+            else if (termMonths === 48) resPct = 0.15;
+            else if (termMonths === 60) resPct = 0.10;
+
+            const invoiceSubtotal = generalData.netValue;
+            const currentResidualAmount = invoiceSubtotal * resPct;
+
             if (amountToFinance > 0) {
-                baseRent = calculatePMT(r, termMonths, amountToFinance, residualAmount);
+                baseRent = calculatePMT(r, termMonths, amountToFinance, currentResidualAmount);
                 rentWithIva = baseRent * 1.16;
             }
 
@@ -308,7 +396,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             comparisonRowsHTML += `
                 <tr style="${rowStyle}">
                     <td style="padding:6px 8px; border-bottom:1px solid #e2e8f0; ${cellStyle}">${termMonths} Meses${badge}</td>
-                    <td style="padding:6px 8px; border-bottom:1px solid #e2e8f0; text-align:right; ${cellStyle}">$${fmt(engancheMonto)}</td>
+                    <td style="padding:6px 8px; border-bottom:1px solid #e2e8f0; text-align:right; ${cellStyle}">$${fmt(engancheTotal)}</td>
                     <td style="padding:6px 8px; border-bottom:1px solid #e2e8f0; text-align:right; ${cellStyle}">$${fmt(t.initialPaymentTotal)}</td>
                     <td style="padding:6px 8px; border-bottom:1px solid #e2e8f0; text-align:right; ${cellStyle}">$${fmt(baseRent)}</td>
                     <td style="padding:6px 8px; border-bottom:1px solid #e2e8f0; text-align:right; ${cellStyle}">$${fmt(rentWithIva)}</td>
@@ -319,7 +407,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // ── Tabla de amortización solo del plazo seleccionado ──
         let amortizationRowsHTML = '';
         if (amountToFinance > 0) {
-            const r = ((annualInterest / 100) / yearBase) * 30;
+            const r = getMonthlyRate(annualInterest, yearBase);
             const months = t.months;
             const baseMonthlyRent = calculatePMT(r, months, amountToFinance, residualAmount);
 
@@ -365,8 +453,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <tr>
                     <td style="padding:4px; font-weight:bold; color:#555;">Activo:</td>
                     <td style="padding:4px; font-weight: 500;">${generalData.asset} / ${generalData.type}</td>
-                    <td style="padding:4px; font-weight:bold; color:#555;">Enganche / Interés:</td>
-                    <td style="padding:4px; font-weight: 500;">${dpPercentText} / ${annualInterest}% Anual (Base ${yearBase})</td>
+                    <td style="padding:4px; font-weight:bold; color:#555;">Enganche:</td>
+                    <td style="padding:4px; font-weight: 500;">${dpPercentText}</td>
                 </tr>
             </table>
 
@@ -392,9 +480,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <!-- Columna Izquierda: Pago Inicial -->
                     <td style="width:50%; vertical-align: top; padding-right: 20px;">
                         <table style="width:100%; border-collapse: collapse;">
-                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Enganche (${dpPercentText})</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(engancheMonto)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Enganche (${dpPercentText} s/subtotal)</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(engancheSubtotal)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">IVA Enganche</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(engancheIva)}</td></tr>
                             <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Comisión Apertura + Seguro</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(t.paymentSubtotal)}</td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">IVA Comisiones y Seguro</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right;">$${fmt(t.paymentIva)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">IVA Com. y Seguro</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right;">$${fmt(t.paymentSubtotal * 0.16)}</td></tr>
                             <tr><td style="padding:6px; background:#f8fafc; font-weight:bold;">TOTAL AL INICIO</td><td style="padding:6px; background:#f8fafc; text-align:right; font-weight:bold; color:#0f172a;">$${fmt(t.initialPaymentTotal)}</td></tr>
                         </table>
                     </td>
@@ -416,25 +505,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </tr>
             </table>
 
-            <h4 style="margin-bottom: 8px; border-bottom: 2px solid #e1e7ec; padding-bottom: 4px; font-size: 14px; color: #1e293b;">Tabla de Amortización</h4>
-            <table style="width:100%; border-collapse: collapse; font-size:10px; margin-bottom: 10px;">
-                <thead>
-                    <tr style="background-color: #f8fafc;">
-                        <th style="padding:6px; border-bottom:1px solid #cbd5e1; color:#475569;">Mes</th>
-                        <th style="padding:6px; border-bottom:1px solid #cbd5e1; color:#475569; text-align:right;">Saldo Inicial</th>
-                        <th style="padding:6px; border-bottom:1px solid #cbd5e1; color:#475569; text-align:right;">Pago Mensual</th>
-                        <th style="padding:6px; border-bottom:1px solid #cbd5e1; color:#475569; text-align:right;">Intereses</th>
-                        <th style="padding:6px; border-bottom:1px solid #cbd5e1; color:#475569; text-align:right;">Capital M.</th>
-                        <th style="padding:6px; border-bottom:1px solid #cbd5e1; color:#475569; text-align:right;">Saldo Final</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${amortizationRowsHTML}
-                </tbody>
-            </table>
 
-            <div style="font-size: 9px; color: #64748b; line-height: 1.4; text-align: center; margin-top: 15px;">
-                <p>Financiera RECREA, S.A. de C.V. | Documento de carácter informativo sin valor contractual.</p>
+
+            <div style="font-size: 8px; color: #64748b; line-height: 1.5; margin-top: 18px; border-top: 1px solid #cbd5e1; padding-top: 10px;">
+                <p style="font-weight: bold; margin-bottom: 4px; color: #334155;">NOTAS LEGALES Y CONDICIONES:</p>
+                <p><b>Vigencia:</b> 15 días naturales a partir de su emisión. Cantidades en moneda nacional con IVA.</p>
+                <p><b>Carácter Informativo:</b> Esta proyección es una simulación de Arrendamiento Puro; no constituye una oferta vinculante, autorización de crédito, ni compromiso de contratación por parte de CREDIAN.</p>
+                <p><b>Variabilidad:</b> Las rentas, condiciones y gastos accesorios podrán variar tras la evaluación del perfil crediticio del cliente y las políticas vigentes al momento de la firma del contrato.</p>
+                <p><b>Deslinde de Responsabilidad:</b> CREDIAN no se responsabiliza por errores de captura o información ofrecida por terceros (agencias o lotes) ajenos a esta institución.</p>
+                <p><b>Gastos:</b> No se incluyen seguros, placas ni contribuciones derivadas del uso de la unidad, salvo pacto en contrario.</p>
+                <p><b>Aprobación:</b> Toda operación está sujeta a la entrega de documentación completa y aprobación final por CREDIAN.</p>
             </div>
         `;
 
@@ -445,54 +525,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const templateBytes = await fetch(templateUrl).then(res => res.arrayBuffer());
                 const pdfDoc = await PDFDocument.load(templateBytes, { ignoreEncryption: true });
-                const pages = pdfDoc.getPages();
-                const firstPage = pages[0];
+
+                // Remove extra pages from template (keep only page 1)
+                while (pdfDoc.getPageCount() > 1) {
+                    pdfDoc.removePage(pdfDoc.getPageCount() - 1);
+                }
+
+                const firstPage = pdfDoc.getPages()[0];
                 const { width, height } = firstPage.getSize();
 
-                // Increase scale heavily for giant table to look crisp
                 const canvas = await html2canvas(container, { scale: 2.5, windowWidth: 800, backgroundColor: null });
                 const imgData = canvas.toDataURL('image/png');
-
                 const pngImage = await pdfDoc.embedPng(imgData);
+
+                // Scale content to fit on the single page
                 const pdfWidth = width;
-                const totalContentHeight = (canvas.height * pdfWidth) / canvas.width;
+                const contentHeight = (canvas.height * pdfWidth) / canvas.width;
+                const maxHeight = height - 20;
+                const finalHeight = Math.min(contentHeight, maxHeight);
+                const finalWidth = (finalHeight === maxHeight) ? (canvas.width * maxHeight) / canvas.height : pdfWidth;
 
-                // Si el contenido cabe en una página
-                if (totalContentHeight <= height - 40) {
-                    firstPage.drawImage(pngImage, {
-                        x: 0,
-                        y: height - totalContentHeight - 20,
-                        width: pdfWidth,
-                        height: totalContentHeight
-                    });
-                } else {
-                    // Multi-página: dividir el contenido renderizado
-                    const usableHeight = height - 40;
-                    const sourceHeightPerPage = (usableHeight / pdfWidth) * canvas.width;
-                    const totalPages = Math.ceil(canvas.height / sourceHeightPerPage);
-
-                    for (let p = 0; p < totalPages; p++) {
-                        const page = p === 0 ? firstPage : pdfDoc.addPage([width, height]);
-                        const sliceCanvas = document.createElement('canvas');
-                        sliceCanvas.width = canvas.width;
-                        const sliceStart = p * sourceHeightPerPage;
-                        const sliceHeight = Math.min(sourceHeightPerPage, canvas.height - sliceStart);
-                        sliceCanvas.height = sliceHeight;
-                        const ctx = sliceCanvas.getContext('2d');
-                        ctx.drawImage(canvas, 0, sliceStart, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
-
-                        const sliceImgData = sliceCanvas.toDataURL('image/png');
-                        const slicePng = await pdfDoc.embedPng(sliceImgData);
-                        const drawHeight = (sliceHeight * pdfWidth) / canvas.width;
-
-                        page.drawImage(slicePng, {
-                            x: 0,
-                            y: height - drawHeight - 20,
-                            width: pdfWidth,
-                            height: drawHeight
-                        });
-                    }
-                }
+                firstPage.drawImage(pngImage, {
+                    x: 0,
+                    y: height - finalHeight - 10,
+                    width: finalWidth,
+                    height: finalHeight
+                });
 
                 const pdfBytes = await pdfDoc.save();
                 const blob = new Blob([pdfBytes], { type: 'application/pdf' });
