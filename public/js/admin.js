@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // Load Background PDF
                 const { PDFDocument } = window.PDFLib;
-                const fetchRes = await fetch('/pdf/hoja_membretada.pdf');
+                const fetchRes = await fetch('/pdf/hoja_memb2.pdf');
                 if (!fetchRes.ok) {
                     throw new Error('No se pudo cargar la hoja membretada. Status: ' + fetchRes.status);
                 }
