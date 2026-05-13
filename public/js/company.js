@@ -134,7 +134,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const engancheSubtotal = invoiceSubtotal * dpPercent;
         const engancheIva = engancheSubtotal * 0.16;
         const engancheTotal = engancheSubtotal + engancheIva;
-        const commissionSubtotal = invoiceSubtotal * 0.03;
+        const commissionRate = invoiceSubtotal > 1000000 ? 0.02 : 0.03;
+        const commissionSubtotal = invoiceSubtotal * commissionRate;
         // Pago inicial = enganche + comisión, todo + IVA
         const pagoInicialSubtotal = engancheSubtotal + commissionSubtotal;
         const pagoInicialIva = pagoInicialSubtotal * 0.16;
@@ -195,7 +196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (previewMonthsTag) previewMonthsTag.textContent = months;
     }
 
-    const inputsToWatch = document.querySelectorAll('#q-invoiceValue, #q-invoiceValueType, #q-downpayment, #q-months, #q-interestRate, #q-yearBase, #q-residualValue');
+    const inputsToWatch = document.querySelectorAll('#q-invoiceValue, #q-downpayment, #q-months, #q-interestRate, #q-yearBase, #q-residualValue');
     inputsToWatch.forEach(input => input.addEventListener('input', calculateLivePreview));
     inputsToWatch.forEach(input => input.addEventListener('change', calculateLivePreview));
 
@@ -233,7 +234,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const engancheSubtotal = invoiceSubtotal * dpPercent;
             const engancheIva = engancheSubtotal * 0.16;
             const engancheTotal = engancheSubtotal + engancheIva;
-            const commissionSubtotal = invoiceSubtotal * 0.03;
+            const commissionRate = invoiceSubtotal > 1000000 ? 0.02 : 0.03;
+            const commissionSubtotal = invoiceSubtotal * commissionRate;
             const pagoInicialSubtotal = engancheSubtotal + commissionSubtotal;
             const pagoInicialIva = pagoInicialSubtotal * 0.16;
             const initialPaymentTotal = pagoInicialSubtotal + pagoInicialIva;
