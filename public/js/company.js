@@ -513,7 +513,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
 
         const { PDFDocument } = window.PDFLib;
-        const templateUrl = '/pdf/hoja_memb2.pdf';
+        const templateUrl = '/pdf/hoja_memb10.pdf';
 
         setTimeout(async () => {
             try {
