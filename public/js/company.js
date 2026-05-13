@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Attach money formatting to all currency inputs
-    const moneyInputs = document.querySelectorAll('#q-invoiceValue, #q-insurance, #q-residualValue');
+    const moneyInputs = document.querySelectorAll('#q-invoiceValue, #q-residualValue');
     moneyInputs.forEach(input => {
         input.addEventListener('blur', formatMoneyInput);
         input.addEventListener('focus', unformatMoneyInput);
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const rawValue = parseMoney(document.getElementById('q-invoiceValue').value);
         const valueType = document.getElementById('q-invoiceValueType').value;
         const dpPercent = parseFloat(document.getElementById('q-downpayment').value) || 0.10;
-        const insurance = parseMoney(document.getElementById('q-insurance').value);
+
         const months = parseInt(document.getElementById('q-months').value) || 12;
         const annualInterest = parseFloat(document.getElementById('q-interestRate').value) || 30;
         const yearBase = parseInt(document.getElementById('q-yearBase').value) || 360;
@@ -135,8 +135,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const engancheIva = engancheSubtotal * 0.16;
         const engancheTotal = engancheSubtotal + engancheIva;
         const commissionSubtotal = invoiceSubtotal * 0.03;
-        // Pago inicial = enganche + comisión + seguro, todo + IVA
-        const pagoInicialSubtotal = engancheSubtotal + commissionSubtotal + insurance;
+        // Pago inicial = enganche + comisión, todo + IVA
+        const pagoInicialSubtotal = engancheSubtotal + commissionSubtotal;
         const pagoInicialIva = pagoInicialSubtotal * 0.16;
         const initialPaymentTotal = pagoInicialSubtotal + pagoInicialIva;
 
@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (previewMonthsTag) previewMonthsTag.textContent = months;
     }
 
-    const inputsToWatch = document.querySelectorAll('#q-invoiceValue, #q-invoiceValueType, #q-downpayment, #q-insurance, #q-months, #q-interestRate, #q-yearBase, #q-residualValue');
+    const inputsToWatch = document.querySelectorAll('#q-invoiceValue, #q-invoiceValueType, #q-downpayment, #q-months, #q-interestRate, #q-yearBase, #q-residualValue');
     inputsToWatch.forEach(input => input.addEventListener('input', calculateLivePreview));
     inputsToWatch.forEach(input => input.addEventListener('change', calculateLivePreview));
 
@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const rawValue = parseMoney(document.getElementById('q-invoiceValue').value);
             const valueType = document.getElementById('q-invoiceValueType').value;
             const dpPercent = parseFloat(document.getElementById('q-downpayment').value) || 0.10;
-            const insurance = parseMoney(document.getElementById('q-insurance').value);
+
             const months = parseInt(document.getElementById('q-months').value) || 12;
             const annualInterest = parseFloat(document.getElementById('q-interestRate').value) || 30;
             const yearBase = parseInt(document.getElementById('q-yearBase').value) || 360;
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const engancheIva = engancheSubtotal * 0.16;
             const engancheTotal = engancheSubtotal + engancheIva;
             const commissionSubtotal = invoiceSubtotal * 0.03;
-            const pagoInicialSubtotal = engancheSubtotal + commissionSubtotal + insurance;
+            const pagoInicialSubtotal = engancheSubtotal + commissionSubtotal;
             const pagoInicialIva = pagoInicialSubtotal * 0.16;
             const initialPaymentTotal = pagoInicialSubtotal + pagoInicialIva;
 
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 extraordinaryCommission: yearBase, // Using this numeric field to store yearBase for PDF rendering
                 firstRent: engancheSubtotal, // Using firstRent to store Enganche subtotal for DB
                 openingCommission: commissionSubtotal,
-                paymentSubtotal: pagoInicialSubtotal - engancheSubtotal, // comisión + seguro subtotal
+                paymentSubtotal: pagoInicialSubtotal - engancheSubtotal, // comisión subtotal
                 paymentIva: pagoInicialIva,
                 initialPaymentTotal: initialPaymentTotal,
                 monthlyRent: totalMonthlyRent / 1.16, // Subtotal interest+capital
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert('Cotización guardada exitosamente. Generando PDF...');
 
             // Generate PDF logic passing custom extras
-            generatePDF({ ...data.quote, insuranceAmount: insurance, valueType: valueType, residualAmount: residualValue, montoAFinanciar: amountToFinance }, user);
+            generatePDF({ ...data.quote, valueType: valueType, residualAmount: residualValue, montoAFinanciar: amountToFinance }, user);
 
             // Reset form
             form.reset();
@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const container = document.getElementById('print-container');
 
         const t = terms[0];
-        const insurance = quote.insuranceAmount !== undefined ? quote.insuranceAmount : (t.paymentSubtotal - t.openingCommission);
+
         const annualInterest = t.netResidualValue || 30; // Retrieved from netResidualValue workaround
         const yearBase = t.extraordinaryCommission || 360; // Retrieved from extraordinaryCommission workaround
         const engancheSubtotal = t.firstRent; // Retrieved from firstRent workaround (now stores subtotal)
@@ -453,7 +453,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <tr>
                     <td style="padding:4px; font-weight:bold; color:#555;">Activo:</td>
                     <td style="padding:4px; font-weight: 500;">${generalData.asset} / ${generalData.type}</td>
-                    <td style="padding:4px; font-weight:bold; color:#555;">Enganche:</td>
+                    <td style="padding:4px; font-weight:bold; color:#555;">Pago Inicial:</td>
                     <td style="padding:4px; font-weight: 500;">${dpPercentText}</td>
                 </tr>
             </table>
@@ -463,7 +463,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <thead>
                     <tr style="background-color:#1e3a5f; -webkit-print-color-adjust:exact; print-color-adjust:exact;">
                         <th style="padding:7px 8px; background-color:#1e3a5f; color:#ffffff; text-align:left; font-size:10px; font-weight:700; border-bottom:2px solid #1e3a5f;">Plazo</th>
-                        <th style="padding:7px 8px; background-color:#1e3a5f; color:#ffffff; text-align:right; font-size:10px; font-weight:700; border-bottom:2px solid #1e3a5f;">Enganche</th>
+                        <th style="padding:7px 8px; background-color:#1e3a5f; color:#ffffff; text-align:right; font-size:10px; font-weight:700; border-bottom:2px solid #1e3a5f;">Pago Inicial</th>
                         <th style="padding:7px 8px; background-color:#1e3a5f; color:#ffffff; text-align:right; font-size:10px; font-weight:700; border-bottom:2px solid #1e3a5f;">Pago Inicial Total</th>
                         <th style="padding:7px 8px; background-color:#1e3a5f; color:#ffffff; text-align:right; font-size:10px; font-weight:700; border-bottom:2px solid #1e3a5f;">Renta Mensual</th>
                         <th style="padding:7px 8px; background-color:#1e3a5f; color:#ffffff; text-align:right; font-size:10px; font-weight:700; border-bottom:2px solid #1e3a5f;">Renta + IVA</th>
@@ -480,10 +480,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <!-- Columna Izquierda: Pago Inicial -->
                     <td style="width:50%; vertical-align: top; padding-right: 20px;">
                         <table style="width:100%; border-collapse: collapse;">
-                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Enganche (${dpPercentText} s/subtotal)</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(engancheSubtotal)}</td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">IVA Enganche</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(engancheIva)}</td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Comisión Apertura + Seguro</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(t.paymentSubtotal)}</td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">IVA Com. y Seguro</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right;">$${fmt(t.paymentSubtotal * 0.16)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Pago Inicial (${dpPercentText} s/subtotal)</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(engancheSubtotal)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">IVA Pago Inicial</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(engancheIva)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Comisión Apertura</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(t.paymentSubtotal)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">IVA Comisión</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right;">$${fmt(t.paymentSubtotal * 0.16)}</td></tr>
                             <tr><td style="padding:6px; background:#f8fafc; font-weight:bold;">TOTAL AL INICIO</td><td style="padding:6px; background:#f8fafc; text-align:right; font-weight:bold; color:#0f172a;">$${fmt(t.initialPaymentTotal)}</td></tr>
                         </table>
                     </td>
@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         `;
 
         const { PDFDocument } = window.PDFLib;
-        const templateUrl = '/pdf/hoja_membretada.pdf';
+        const templateUrl = '/pdf/hoja_memb2.pdf';
 
         setTimeout(async () => {
             try {
