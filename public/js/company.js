@@ -124,10 +124,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         else if (months === 60) resPct = 0.10;
 
         const residualValue = invoiceSubtotal * resPct;
+        const residualTotal = residualValue * 1.16; // Valor residual ya con IVA
 
         const qResidualInput = document.getElementById('q-residualValue');
         if (qResidualInput) {
-            qResidualInput.value = toMoneyString(residualValue);
+            qResidualInput.value = toMoneyString(residualTotal);
         }
 
         // Enganche se calcula sobre el SUBTOTAL (sin IVA), como en arrendamiento
@@ -135,16 +136,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const engancheIva = engancheSubtotal * 0.16;
         const engancheTotal = engancheSubtotal + engancheIva;
         const commissionRate = invoiceSubtotal > 1000000 ? 0.02 : 0.03;
-        const commissionSubtotal = invoiceSubtotal * commissionRate;
-        // Pago inicial = enganche + comisión, todo + IVA
-        const pagoInicialSubtotal = engancheSubtotal + commissionSubtotal;
-        const pagoInicialIva = pagoInicialSubtotal * 0.16;
-        const initialPaymentTotal = pagoInicialSubtotal + pagoInicialIva;
+        const commissionTotal = invoiceSubtotal * commissionRate * 1.16; // Comisión ya con IVA incluido
+        // Pago inicial = enganche + IVA enganche + comisión (ya con IVA)
+        const initialPaymentTotal = engancheTotal + commissionTotal;
 
         // Se financia el SUBTOTAL menos el enganche (sin IVA)
         const amountToFinance = invoiceSubtotal - engancheSubtotal;
-        const residualIva = residualValue * 0.16;
-        const residualTotal = residualValue + residualIva;
         let totalMonthlyRent = 0;
         let baseMonthlyRent = 0;
         let amortizationRows = '';
@@ -235,10 +232,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const engancheIva = engancheSubtotal * 0.16;
             const engancheTotal = engancheSubtotal + engancheIva;
             const commissionRate = invoiceSubtotal > 1000000 ? 0.02 : 0.03;
-            const commissionSubtotal = invoiceSubtotal * commissionRate;
-            const pagoInicialSubtotal = engancheSubtotal + commissionSubtotal;
-            const pagoInicialIva = pagoInicialSubtotal * 0.16;
-            const initialPaymentTotal = pagoInicialSubtotal + pagoInicialIva;
+            const commissionTotal = invoiceSubtotal * commissionRate * 1.16; // Comisión ya con IVA incluido
+            // Pago inicial = enganche + IVA enganche + comisión (ya con IVA)
+            const initialPaymentTotal = engancheTotal + commissionTotal;
 
             // Financiar SUBTOTAL - enganche
             const amountToFinance = invoiceSubtotal - engancheSubtotal;
@@ -267,9 +263,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 months: months,
                 extraordinaryCommission: yearBase, // Using this numeric field to store yearBase for PDF rendering
                 firstRent: engancheSubtotal, // Using firstRent to store Enganche subtotal for DB
-                openingCommission: commissionSubtotal,
-                paymentSubtotal: pagoInicialSubtotal - engancheSubtotal, // comisión subtotal
-                paymentIva: pagoInicialIva,
+                openingCommission: commissionTotal, // Comisión ya con IVA
+                paymentSubtotal: commissionTotal, // Comisión total (ya incluye IVA)
+                paymentIva: engancheSubtotal * 0.16, // Solo IVA del enganche
                 initialPaymentTotal: initialPaymentTotal,
                 monthlyRent: totalMonthlyRent / 1.16, // Subtotal interest+capital
                 monthlyRentIva: totalMonthlyRent - (totalMonthlyRent / 1.16),
@@ -350,8 +346,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const engancheTotal = engancheSubtotal + engancheIva;
         const amountToFinance = t.residualValue; // Retrieved from residualValue workaround
         const residualAmount = quote.residualAmount !== undefined ? quote.residualAmount : (t.residualIva || 0); // Actual residual value
-        const residualIva = residualAmount * 0.16;
-        const residualTotal = residualAmount + residualIva;
+        const residualTotal = residualAmount * 1.16; // Valor residual ya con IVA incluido
         const dpPercent = t.estimatedIsrSaving;
         const dpPercentText = (dpPercent * 100).toFixed(0) + '%';
         const selectedMonths = t.months;
@@ -484,8 +479,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <table style="width:100%; border-collapse: collapse;">
                             <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Pago Inicial (${dpPercentText} s/subtotal)</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(engancheSubtotal)}</td></tr>
                             <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">IVA Pago Inicial</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(engancheIva)}</td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Comisión Apertura</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(t.paymentSubtotal)}</td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">IVA Comisión</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right;">$${fmt(t.paymentSubtotal * 0.16)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">Comisión Apertura (IVA incluido)</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right;">$${fmt(t.paymentSubtotal)}</td></tr>
                             <tr><td style="padding:6px; background:#f8fafc; font-weight:bold;">TOTAL AL INICIO</td><td style="padding:6px; background:#f8fafc; text-align:right; font-weight:bold; color:#0f172a;">$${fmt(t.initialPaymentTotal)}</td></tr>
                         </table>
                     </td>
@@ -498,9 +492,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <tr><td style="padding:6px; background:#f0f9ff; font-weight:bold;">TOTAL MENSUAL</td><td style="padding:6px; background:#f0f9ff; text-align:right; font-weight:bold; color:#3ca65a;">$${fmt(t.totalMonthlyRent)}</td></tr>
                             ${residualAmount > 0 ? `
                             <tr><td colspan="2" style="padding:8px 4px 2px; border-top:2px solid #e2e8f0;"></td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Valor Residual</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(residualAmount)}</td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">IVA Valor Residual</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right;">$${fmt(residualIva)}</td></tr>
-                            <tr><td style="padding:6px; background:#fef3c7; font-weight:bold;">TOTAL RESIDUAL</td><td style="padding:6px; background:#fef3c7; text-align:right; font-weight:bold; color:#92400e;">$${fmt(residualTotal)}</td></tr>
+                            <tr><td style="padding:6px; background:#fef3c7; font-weight:bold;">Valor Residual (IVA incluido)</td><td style="padding:6px; background:#fef3c7; text-align:right; font-weight:bold; color:#92400e;">$${fmt(residualTotal)}</td></tr>
                             ` : ''}
                         </table>
                     </td>
