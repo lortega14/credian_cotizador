@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         else if (months === 48) resPct = 0.15;
         else if (months === 60) resPct = 0.10;
 
-        const residualValue = invoiceSubtotal * resPct;
+        const residualValue = invoiceTotal * resPct;
         const residualTotal = residualValue * 1.16; // Valor residual ya con IVA
 
         const qResidualInput = document.getElementById('q-residualValue');
@@ -135,9 +135,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const engancheSubtotal = invoiceSubtotal * dpPercent;
         const engancheIva = engancheSubtotal * 0.16;
         const engancheTotal = engancheSubtotal + engancheIva;
-        const commissionRate = invoiceSubtotal > 1000000 ? 0.02 : 0.03;
-        const commissionTotal = invoiceSubtotal * commissionRate * 1.16; // Comisión ya con IVA incluido
+        const commissionRate = invoiceTotal > 1000000 ? 0.02 : 0.03;
+        const commissionSubtotal = invoiceTotal * commissionRate;
+        const commissionTotal = commissionSubtotal * 1.16; // Comisión ya con IVA incluido
         // Pago inicial = enganche + IVA enganche + comisión (ya con IVA)
+        const initialPaymentSubtotal = engancheSubtotal + commissionSubtotal;
         const initialPaymentTotal = engancheTotal + commissionTotal;
 
         // Se financia el SUBTOTAL menos el enganche (sin IVA)
@@ -186,9 +188,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             tableContainer.style.display = 'none';
         }
 
-        document.getElementById('preview-initial-payment').textContent = `$${initialPaymentTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        document.getElementById('preview-initial-payment').innerHTML = `$${initialPaymentSubtotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style="font-size: 14px; font-weight: 500; color: #64748b;">+ IVA = $${initialPaymentTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`;
         document.getElementById('preview-monthly-payment').innerHTML = `$${baseMonthlyRent.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style="font-size: 14px; font-weight: 500; color: #64748b;">+ IVA = $${totalMonthlyRent.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`;
-        document.getElementById('preview-residual-value').textContent = `$${residualTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        document.getElementById('preview-residual-value').innerHTML = `$${residualValue.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style="font-size: 14px; font-weight: 500; color: #64748b;">+ IVA = $${residualTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`;
         const previewMonthsTag = document.getElementById('preview-months');
         if (previewMonthsTag) previewMonthsTag.textContent = months;
     }
@@ -214,8 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const months = parseInt(document.getElementById('q-months').value) || 12;
             const annualInterest = parseFloat(document.getElementById('q-interestRate').value) || 30;
             const yearBase = parseInt(document.getElementById('q-yearBase').value) || 360;
-            const residualValue = parseMoney(document.getElementById('q-residualValue').value);
-
+            // We recalculate residual value based on total instead of parsing from UI
             let invoiceSubtotal = 0;
             let invoiceTotal = 0;
 
@@ -227,12 +228,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 invoiceSubtotal = rawValue / 1.16;
             }
 
+            let resPct = 0.20;
+            if (months === 12) resPct = 0.38;
+            else if (months === 18) resPct = 0.30;
+            else if (months === 24) resPct = 0.26;
+            else if (months === 36) resPct = 0.20;
+            else if (months === 48) resPct = 0.15;
+            else if (months === 60) resPct = 0.10;
+            const residualSubtotal = invoiceTotal * resPct;
+
             // Enganche sobre SUBTOTAL
             const engancheSubtotal = invoiceSubtotal * dpPercent;
             const engancheIva = engancheSubtotal * 0.16;
             const engancheTotal = engancheSubtotal + engancheIva;
-            const commissionRate = invoiceSubtotal > 1000000 ? 0.02 : 0.03;
-            const commissionTotal = invoiceSubtotal * commissionRate * 1.16; // Comisión ya con IVA incluido
+            const commissionRate = invoiceTotal > 1000000 ? 0.02 : 0.03;
+            const commissionSubtotal = invoiceTotal * commissionRate;
+            const commissionTotal = commissionSubtotal * 1.16; // Comisión ya con IVA incluido
             // Pago inicial = enganche + IVA enganche + comisión (ya con IVA)
             const initialPaymentTotal = engancheTotal + commissionTotal;
 
@@ -242,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             let totalMonthlyRent = 0;
             if (amountToFinance > 0) {
                 const r = getMonthlyRate(annualInterest, yearBase);
-                const baseMonthlyRent = calculatePMT(r, months, amountToFinance, residualValue);
+                const baseMonthlyRent = calculatePMT(r, months, amountToFinance, residualSubtotal);
                 totalMonthlyRent = baseMonthlyRent * 1.16;
             }
 
@@ -271,7 +282,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 monthlyRentIva: totalMonthlyRent - (totalMonthlyRent / 1.16),
                 totalMonthlyRent: totalMonthlyRent,
                 residualValue: amountToFinance, // Store Monto a Financiar
-                residualIva: residualValue, // Store actual residual value amount
+                residualIva: residualSubtotal, // Store actual residual value amount
                 netResidualValue: annualInterest, // Store interest rate
                 estimatedIsrSaving: dpPercent // Store downpayment percent
             };
@@ -280,7 +291,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             alert('Cotización guardada exitosamente. Generando PDF...');
 
             // Generate PDF logic passing custom extras
-            generatePDF({ ...data.quote, valueType: valueType, residualAmount: residualValue, montoAFinanciar: amountToFinance }, user);
+            generatePDF({ ...data.quote, valueType: valueType, residualAmount: residualSubtotal, montoAFinanciar: amountToFinance }, user);
 
             // Reset form
             form.reset();
@@ -372,7 +383,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             else if (termMonths === 60) resPct = 0.10;
 
             const invoiceSubtotal = generalData.netValue;
-            const currentResidualAmount = invoiceSubtotal * resPct;
+            const currentResidualAmount = invoiceTotal * resPct;
 
             if (amountToFinance > 0) {
                 baseRent = calculatePMT(r, termMonths, amountToFinance, currentResidualAmount);
