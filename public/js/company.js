@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Año Comercial (360): 30 días por mes → tasa diaria * 30
     // Año Natural (365): 30.5 días promedio por mes → tasa diaria * 30.5
     function getMonthlyRate(annualRate, yearBase) {
-        const daysPerMonth = yearBase === 365 ? 30.5 : 30;
+        const daysPerMonth = yearBase === 360 ? 30.4 : 30.4;
         return ((annualRate / 100) / yearBase) * daysPerMonth;
     }
 
