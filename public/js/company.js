@@ -123,6 +123,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         else if (months === 48) resPct = 0.15;
         else if (months === 60) resPct = 0.10;
 
+        const conditionType = document.getElementById('q-type').value;
+        if (conditionType === 'Seminuevo') {
+            resPct = resPct / 2;
+        }
+
         const residualValue = invoiceTotal * resPct;
         const residualTotal = residualValue * 1.16; // Valor residual ya con IVA
 
@@ -195,7 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (previewMonthsTag) previewMonthsTag.textContent = months;
     }
 
-    const inputsToWatch = document.querySelectorAll('#q-invoiceValue, #q-downpayment, #q-months, #q-interestRate, #q-yearBase, #q-residualValue');
+    const inputsToWatch = document.querySelectorAll('#q-invoiceValue, #q-downpayment, #q-months, #q-interestRate, #q-yearBase, #q-residualValue, #q-type');
     inputsToWatch.forEach(input => input.addEventListener('input', calculateLivePreview));
     inputsToWatch.forEach(input => input.addEventListener('change', calculateLivePreview));
 
@@ -235,6 +240,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             else if (months === 36) resPct = 0.20;
             else if (months === 48) resPct = 0.15;
             else if (months === 60) resPct = 0.10;
+
+            const conditionType = document.getElementById('q-type').value;
+            if (conditionType === 'Seminuevo') {
+                resPct = resPct / 2;
+            }
+
             const residualSubtotal = invoiceTotal * resPct;
 
             // Enganche sobre SUBTOTAL
@@ -381,6 +392,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             else if (termMonths === 36) resPct = 0.20;
             else if (termMonths === 48) resPct = 0.15;
             else if (termMonths === 60) resPct = 0.10;
+
+            if (generalData.type === 'Seminuevo') {
+                resPct = resPct / 2;
+            }
 
             const invoiceSubtotal = generalData.netValue;
             const currentResidualAmount = invoiceTotal * resPct;
