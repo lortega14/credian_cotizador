@@ -26,6 +26,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  fixedCondition: {
+    type: String,
+    enum: ['Libre', 'Nuevo', 'Seminuevo'],
+    default: 'Libre'
+  },
   lastLogin: {
     type: Date
   }

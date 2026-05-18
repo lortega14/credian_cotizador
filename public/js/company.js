@@ -10,6 +10,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         qClient.value = user.companyName || user.name;
     }
 
+    // Lock condition if fixed
+    const qType = document.getElementById('q-type');
+    if (qType && user.fixedCondition && user.fixedCondition !== 'Libre') {
+        qType.value = user.fixedCondition;
+        qType.style.backgroundColor = '#e2e8f0';
+        qType.style.color = '#475569';
+        qType.style.cursor = 'not-allowed';
+        qType.style.fontWeight = 'bold';
+        qType.disabled = true;
+    }
+
     const navNewQuote = document.getElementById('nav-new-quote');
     const navHistory = document.getElementById('nav-history');
     const viewNewQuote = document.getElementById('view-new-quote');

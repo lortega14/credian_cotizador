@@ -55,10 +55,10 @@ const api = {
     },
 
     // Admin
-    async createCompanyUser(email, companyName) {
+    async createCompanyUser(email, companyName, fixedCondition = 'Libre') {
         return this.request('/admin/users', {
             method: 'POST',
-            body: { email, companyName }
+            body: { email, companyName, fixedCondition }
         });
     },
 

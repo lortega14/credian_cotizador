@@ -105,12 +105,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 users.forEach(user => {
                     const row = document.createElement('tr');
                     // Check if name is needed, or just companyName
+                    const condText = (user.fixedCondition && user.fixedCondition !== 'Libre') ? `<span style="font-size:11px; background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:4px; margin-left:8px;">Solo ${user.fixedCondition}</span>` : '';
                     row.innerHTML = `
-                        <td>${user.companyName}</td>
+                        <td>${user.companyName} ${condText}</td>
                         <td>${user.email}</td>
                         <td>${new Date(user.createdAt).toLocaleDateString()}</td>
                         <td style="text-align:center;">
-                            <button class="btn btn-secondary" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="window.openEditCompanyModal('${user._id}', '${user.companyName}', '${user.email}')">Editar</button>
+                            <button class="btn btn-secondary" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="window.openEditCompanyModal('${user._id}', '${user.companyName}', '${user.email}', '${user.fixedCondition || 'Libre'}')">Editar</button>
                             <button class="btn btn-outline" style="padding:4px 8px; font-size:12px; color:var(--danger); border-color:var(--danger);" onclick="window.deleteCompany('${user._id}')">Eliminar</button>
                         </td>
                     `;
@@ -243,11 +244,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const name = document.getElementById('new-company-name').value;
             const email = document.getElementById('new-company-email').value;
+            const condition = document.getElementById('new-company-condition').value;
             const resultBox = document.getElementById('create-company-result');
             const statusBox = document.getElementById('email-send-status');
 
             try {
-                const res = await window.api.createCompanyUser(email, name);
+                const res = await window.api.createCompanyUser(email, name, condition);
 
                 // Store credentials for copy/email buttons
                 lastCreatedCredentials = {
@@ -334,10 +336,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Editing & Deleting logic attached to window for inline HTML onclick handlers
-    window.openEditCompanyModal = (id, name, email) => {
+    window.openEditCompanyModal = (id, name, email, condition = 'Libre') => {
         document.getElementById('edit-company-id').value = id;
         document.getElementById('edit-company-name').value = name;
         document.getElementById('edit-company-email').value = email;
+        document.getElementById('edit-company-condition').value = condition;
         document.getElementById('edit-reset-password').checked = false;
         document.getElementById('edit-company-result').style.display = 'none';
         document.getElementById('modal-edit-company').style.display = 'flex';
@@ -367,6 +370,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const data = {
                 companyName: document.getElementById('edit-company-name').value,
                 email: document.getElementById('edit-company-email').value,
+                fixedCondition: document.getElementById('edit-company-condition').value,
                 resetPassword: document.getElementById('edit-reset-password').checked
             };
 

@@ -109,11 +109,16 @@
                 <div class="glass-panel" style="padding: 2rem; margin-bottom: 2rem;">
                     <h3>Registrar Nueva Empresa</h3>
                     <p style="margin: 1rem 0;">Da de alta a una nueva empresa para permitirles cotizar.</p>
-                    <form id="form-create-company" style="display:flex; gap:10px; align-items:flex-start;">
+                    <form id="form-create-company" style="display:flex; gap:10px; align-items:flex-start; flex-wrap: wrap;">
                         <input type="text" id="new-company-name" placeholder="Nombre de la Empresa" required
-                            style="flex:1;">
+                            style="flex:1; min-width: 200px;">
                         <input type="email" id="new-company-email" placeholder="Correo Electrónico" required
-                            style="flex:1;">
+                            style="flex:1; min-width: 200px;">
+                        <select id="new-company-condition" style="flex:1; min-width: 150px; padding: 0.75rem; border-radius: 8px; border: 1px solid #cbd5e1; outline: none;">
+                            <option value="Libre">Condición: Libre</option>
+                            <option value="Nuevo">Fijo: Nuevo</option>
+                            <option value="Seminuevo">Fijo: Seminuevo</option>
+                        </select>
                         <button type="submit" class="btn btn-primary" style="padding:0.75rem 2rem;">Crear
                             Empresa</button>
                     </form>
@@ -225,6 +230,17 @@
                                 <span class="modal-label-icon">📧</span> Correo Electrónico
                             </label>
                             <input type="email" id="edit-company-email" required placeholder="empresa@ejemplo.com">
+                        </div>
+
+                        <div class="modal-field">
+                            <label class="modal-label">
+                                <span class="modal-label-icon">🚗</span> Condición Fija
+                            </label>
+                            <select id="edit-company-condition" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; color: #334155; outline: none; font-family: inherit;">
+                                <option value="Libre">Libre (Puede elegir Nuevo/Seminuevo)</option>
+                                <option value="Nuevo">Fijo: Solo Nuevo</option>
+                                <option value="Seminuevo">Fijo: Solo Seminuevo</option>
+                            </select>
                         </div>
 
                         <div class="modal-divider"></div>

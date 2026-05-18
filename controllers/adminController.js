@@ -106,7 +106,7 @@ exports.downloadQuotesCsv = [isAdmin, async (req, res) => {
 
 exports.createUser = [isAdmin, async (req, res) => {
   try {
-    const { email, companyName } = req.body;
+    const { email, companyName, fixedCondition } = req.body;
 
     if (!email || !companyName) {
       return res.status(400).json({ error: 'Email and Company Name are required' });
@@ -129,7 +129,8 @@ exports.createUser = [isAdmin, async (req, res) => {
       password: hashedPassword,
       name: 'Representante',
       role: 'COMPANY',
-      companyName: companyName
+      companyName: companyName,
+      fixedCondition: fixedCondition || 'Libre'
     });
 
     await newUser.save();
@@ -171,13 +172,14 @@ exports.getUsers = [isAdmin, async (req, res) => {
 exports.updateUser = [isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { email, companyName, resetPassword } = req.body;
+    const { email, companyName, resetPassword, fixedCondition } = req.body;
     
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     user.email = email.toLowerCase().trim();
     user.companyName = companyName;
+    if (fixedCondition) user.fixedCondition = fixedCondition;
 
     let resData = { message: 'Usuario actualizado', user: { email: user.email, companyName: user.companyName } };
 
