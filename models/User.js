@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema({
   },
   fixedCondition: {
     type: String,
-    enum: ['Libre', 'Nuevo', 'Seminuevo'],
+    enum: ['Libre', 'Nuevo', 'Seminuevo', 'Camiones Seminuevos'],
     default: 'Libre'
   },
   lastLogin: {

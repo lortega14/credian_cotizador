@@ -137,6 +137,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const conditionType = document.getElementById('q-type').value;
         if (conditionType === 'Seminuevo') {
             resPct = resPct / 2;
+        } else if (conditionType === 'Camiones Seminuevos') {
+            if (months === 12 || months === 18 || months === 24) resPct = 0.10;
+            else if (months === 36 || months === 48 || months === 60) resPct = 0.05;
         }
 
         const residualValue = invoiceTotal * resPct;
@@ -212,6 +215,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const inputsToWatch = document.querySelectorAll('#q-invoiceValue, #q-downpayment, #q-months, #q-interestRate, #q-yearBase, #q-residualValue, #q-type');
+    
+    // Handle 60 meses restriction for Camiones Seminuevos
+    const qMonthsElem = document.getElementById('q-months');
+    if (qType && qMonthsElem) {
+        const toggle60Months = () => {
+            if (qType.value === 'Camiones Seminuevos') {
+                for (let i = 0; i < qMonthsElem.options.length; i++) {
+                    if (qMonthsElem.options[i].value === '60') {
+                        qMonthsElem.options[i].disabled = true;
+                        qMonthsElem.options[i].style.display = 'none';
+                    }
+                }
+                if (qMonthsElem.value === '60') {
+                    qMonthsElem.value = '48';
+                }
+            } else {
+                for (let i = 0; i < qMonthsElem.options.length; i++) {
+                    if (qMonthsElem.options[i].value === '60') {
+                        qMonthsElem.options[i].disabled = false;
+                        qMonthsElem.options[i].style.display = '';
+                    }
+                }
+            }
+        };
+        qType.addEventListener('change', toggle60Months);
+        toggle60Months();
+    }
+
     inputsToWatch.forEach(input => input.addEventListener('input', calculateLivePreview));
     inputsToWatch.forEach(input => input.addEventListener('change', calculateLivePreview));
 
@@ -386,7 +417,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const invoiceTotal = generalData.invoiceValue;
 
         // ── Calcular comparativo para TODOS los plazos disponibles ──
-        const allTerms = [12, 18, 24, 36, 48, 60];
+        let allTerms = [12, 18, 24, 36, 48, 60];
+        if (generalData.type === 'Camiones Seminuevos') {
+            allTerms = [12, 18, 24, 36, 48];
+        }
         const fmt = (n) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         let comparisonRowsHTML = '';
@@ -406,6 +440,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (generalData.type === 'Seminuevo') {
                 resPct = resPct / 2;
+            } else if (generalData.type === 'Camiones Seminuevos') {
+                if (termMonths === 12 || termMonths === 18 || termMonths === 24) resPct = 0.10;
+                else if (termMonths === 36 || termMonths === 48 || termMonths === 60) resPct = 0.05;
             }
 
             const invoiceSubtotal = generalData.netValue;
