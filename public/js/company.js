@@ -19,6 +19,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         qType.style.cursor = 'not-allowed';
         qType.style.fontWeight = 'bold';
         qType.disabled = true;
+
+        // Si no es libre, removemos Camiones del selector de vehículos
+        const qAsset = document.getElementById('q-asset');
+        if (qAsset) {
+            for (let i = 0; i < qAsset.options.length; i++) {
+                if (qAsset.options[i].value === 'Camiones') {
+                    qAsset.options[i].disabled = true;
+                    qAsset.options[i].style.display = 'none';
+                }
+            }
+        }
     }
 
     const navNewQuote = document.getElementById('nav-new-quote');
@@ -135,11 +146,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         else if (months === 60) resPct = 0.10;
 
         const conditionType = document.getElementById('q-type').value;
-        if (conditionType === 'Seminuevo') {
-            resPct = resPct / 2;
-        } else if (conditionType === 'Camiones Seminuevos') {
+        const assetType = document.getElementById('q-asset').value;
+        if (assetType === 'Camiones' && conditionType === 'Seminuevo') {
             if (months === 12 || months === 18 || months === 24) resPct = 0.10;
             else if (months === 36 || months === 48 || months === 60) resPct = 0.05;
+        } else if (conditionType === 'Seminuevo') {
+            resPct = resPct / 2;
         }
 
         const residualValue = invoiceTotal * resPct;
@@ -218,9 +230,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Handle 60 meses restriction for Camiones Seminuevos
     const qMonthsElem = document.getElementById('q-months');
-    if (qType && qMonthsElem) {
+    const qAssetElem = document.getElementById('q-asset');
+    if (qType && qMonthsElem && qAssetElem) {
         const toggle60Months = () => {
-            if (qType.value === 'Camiones Seminuevos') {
+            if (qAssetElem.value === 'Camiones' && qType.value === 'Seminuevo') {
                 for (let i = 0; i < qMonthsElem.options.length; i++) {
                     if (qMonthsElem.options[i].value === '60') {
                         qMonthsElem.options[i].disabled = true;
@@ -240,6 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         };
         qType.addEventListener('change', toggle60Months);
+        qAssetElem.addEventListener('change', toggle60Months);
         toggle60Months();
     }
 
@@ -418,7 +432,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // ── Calcular comparativo para TODOS los plazos disponibles ──
         let allTerms = [12, 18, 24, 36, 48, 60];
-        if (generalData.type === 'Camiones Seminuevos') {
+        if (generalData.asset === 'Camiones' && generalData.type === 'Seminuevo') {
             allTerms = [12, 18, 24, 36, 48];
         }
         const fmt = (n) => n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -438,11 +452,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             else if (termMonths === 48) resPct = 0.15;
             else if (termMonths === 60) resPct = 0.10;
 
-            if (generalData.type === 'Seminuevo') {
-                resPct = resPct / 2;
-            } else if (generalData.type === 'Camiones Seminuevos') {
+            if (generalData.asset === 'Camiones' && generalData.type === 'Seminuevo') {
                 if (termMonths === 12 || termMonths === 18 || termMonths === 24) resPct = 0.10;
                 else if (termMonths === 36 || termMonths === 48 || termMonths === 60) resPct = 0.05;
+            } else if (generalData.type === 'Seminuevo') {
+                resPct = resPct / 2;
             }
 
             const invoiceSubtotal = generalData.netValue;
