@@ -2,6 +2,110 @@ document.addEventListener('DOMContentLoaded', async () => {
     const user = await window.requireAuth('COMPANY');
     if (!user) return;
 
+    let currentAmortizationData = [];
+    let selectedAmortizationYear = 1;
+
+    function renderAmortizationYear(yearNum) {
+        selectedAmortizationYear = yearNum;
+        const tableBody = document.querySelector('#amortization-table tbody');
+        const yearSummaryContainer = document.getElementById('amortization-year-summary');
+        const yearTabsContainer = document.getElementById('amortization-year-tabs');
+
+        if (!currentAmortizationData || currentAmortizationData.length === 0) return;
+
+        const totalMonths = currentAmortizationData.length;
+        const totalYears = Math.ceil(totalMonths / 12);
+
+        // Sanity check yearNum
+        if (typeof yearNum !== 'number' || yearNum < 1 || yearNum > totalYears) {
+            yearNum = 1;
+        }
+
+        // Render Year Tabs
+        if (yearTabsContainer) {
+            let tabsHTML = '';
+            for (let y = 1; y <= totalYears; y++) {
+                const startM = (y - 1) * 12 + 1;
+                const endM = Math.min(y * 12, totalMonths);
+                const isActive = y === yearNum;
+                const bg = isActive ? 'var(--primary)' : 'rgba(0,0,0,0.06)';
+                const color = isActive ? '#ffffff' : '#475569';
+                const shadow = isActive ? '0 4px 10px rgba(15, 78, 136, 0.25)' : 'none';
+                tabsHTML += `<button type="button" class="year-tab-btn" data-year="${y}" style="padding: 6px 14px; border: none; border-radius: 8px; background: ${bg}; color: ${color}; font-weight: ${isActive ? '700' : '600'}; font-size: 12px; cursor: pointer; transition: all 0.2s; box-shadow: ${shadow};">Año ${y} (${startM}-${endM})</button>`;
+            }
+
+            yearTabsContainer.innerHTML = tabsHTML;
+
+            yearTabsContainer.querySelectorAll('.year-tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const yr = parseInt(btn.getAttribute('data-year')) || 1;
+                    renderAmortizationYear(yr);
+                });
+            });
+        }
+
+        // Filter Rows - Strictly 12 months per tab
+        const startIdx = (yearNum - 1) * 12;
+        const filtered = currentAmortizationData.slice(startIdx, startIdx + 12);
+
+        let rowsHTML = '';
+        let periodInterest = 0;
+        let periodPrincipal = 0;
+        let periodRent = 0;
+        let endBalance = 0;
+
+        filtered.forEach(row => {
+            periodInterest += row.interest;
+            periodPrincipal += row.principal;
+            periodRent += row.baseMonthlyRent;
+            endBalance = row.endBalance;
+
+            rowsHTML += `
+                <tr>
+                    <td style="text-align:center; font-weight:600;">${row.month}</td>
+                    <td style="text-align:right">$${row.balance.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td style="text-align:right; font-weight:600; color:#0f172a;">$${(row.baseMonthlyRent * 1.16).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td style="text-align:right; color:#dc2626;">$${row.interest.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td style="text-align:right; color:#16a34a;">$${row.principal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td style="text-align:right; font-weight:600;">$${Math.max(0, row.endBalance).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+            `;
+        });
+
+        if (tableBody) tableBody.innerHTML = rowsHTML;
+
+        // Render Summary
+        if (yearSummaryContainer && filtered.length > 0) {
+            const labelTitle = `Resumen Año ${yearNum} (Meses ${filtered[0].month} al ${filtered[filtered.length - 1].month})`;
+            yearSummaryContainer.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h5 style="margin: 0 0 2px 0; color: #104289; font-size: 14px; font-weight: 700;">${labelTitle}</h5>
+                        <p style="margin: 0; font-size: 12px; color: #64748b;">Resumen acumulado del periodo visualizado</p>
+                    </div>
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                        <div>
+                            <span style="font-size: 11px; color: #64748b; display: block;">Rentas en Periodo (con IVA)</span>
+                            <strong style="font-size: 15px; color: #0f172a;">$${(periodRent * 1.16).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; color: #64748b; display: block;">Interés Pagado</span>
+                            <strong style="font-size: 15px; color: #dc2626;">$${periodInterest.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; color: #64748b; display: block;">Capital Pagado</span>
+                            <strong style="font-size: 15px; color: #16a34a;">$${periodPrincipal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                        </div>
+                        <div>
+                            <span style="font-size: 11px; color: #64748b; display: block;">Saldo Final</span>
+                            <strong style="font-size: 15px; color: #104289;">$${Math.max(0, endBalance).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
     document.getElementById('user-name').textContent = user.companyName || user.name;
 
     // Auto-fill client form with company name
@@ -69,8 +173,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Monthly interest rate helper
     // Año Comercial (360): 30 días por mes → tasa diaria * 30
     // Año Natural (365): 30.5 días promedio por mes → tasa diaria * 30.5
-    function getMonthlyRate(annualRate, yearBase) {
-        const daysPerMonth = yearBase === 360 ? 30.4 : 30.4;
+    function getMonthlyRate(annualRate, yearBase, leaseType) {
+        const daysPerMonth = leaseType === 'Financiero' ? 30.52077 : 30.4;
         return ((annualRate / 100) / yearBase) * daysPerMonth;
     }
 
@@ -137,44 +241,77 @@ document.addEventListener('DOMContentLoaded', async () => {
             invoiceSubtotal = rawValue / 1.16;
         }
 
-        let resPct = 0.20;
-        if (months === 12) resPct = 0.38;
-        else if (months === 18) resPct = 0.30;
-        else if (months === 24) resPct = 0.26;
-        else if (months === 36) resPct = 0.20;
-        else if (months === 48) resPct = 0.15;
-        else if (months === 60) resPct = 0.10;
+        const leaseType = document.getElementById('q-leaseType') ? document.getElementById('q-leaseType').value : 'Puro';
+        let resPct = 0;
 
-        const conditionType = document.getElementById('q-type').value;
-        const assetType = document.getElementById('q-asset').value;
-        if (assetType === 'Camiones' && conditionType === 'Seminuevo') {
-            if (months === 12 || months === 18 || months === 24) resPct = 0.10;
-            else if (months === 36 || months === 48 || months === 60) resPct = 0.05;
-        } else if (conditionType === 'Seminuevo') {
-            resPct = resPct / 2;
+        if (leaseType !== 'Financiero') {
+            resPct = 0.20;
+            if (months === 12) resPct = 0.38;
+            else if (months === 18) resPct = 0.30;
+            else if (months === 24) resPct = 0.26;
+            else if (months === 36) resPct = 0.20;
+            else if (months === 48) resPct = 0.15;
+            else if (months === 60) resPct = 0.10;
+
+            const conditionType = document.getElementById('q-type').value;
+            const assetType = document.getElementById('q-asset').value;
+            if (assetType === 'Camiones' && conditionType === 'Seminuevo') {
+                if (months === 12 || months === 18 || months === 24) resPct = 0.10;
+                else if (months === 36 || months === 48 || months === 60) resPct = 0.05;
+            } else if (conditionType === 'Seminuevo') {
+                resPct = resPct / 2;
+            }
         }
 
         const residualValue = invoiceTotal * resPct;
         const residualTotal = residualValue * 1.16; // Valor residual ya con IVA
+
+        const groupResidual = document.getElementById('group-residual-value');
+        const previewResidualContainer = document.getElementById('preview-residual-container');
+        const previewBadge = document.getElementById('preview-lease-type-badge');
+
+        if (leaseType === 'Financiero') {
+            if (groupResidual) groupResidual.style.display = 'none';
+            if (previewResidualContainer) previewResidualContainer.style.display = 'none';
+            if (previewBadge) {
+                previewBadge.textContent = 'Arrendamiento Financiero';
+                previewBadge.style.background = '#0284c7';
+            }
+        } else {
+            if (groupResidual) groupResidual.style.display = 'block';
+            if (previewResidualContainer) previewResidualContainer.style.display = 'block';
+            if (previewBadge) {
+                previewBadge.textContent = 'Arrendamiento Puro';
+                previewBadge.style.background = 'var(--primary)';
+            }
+        }
 
         const qResidualInput = document.getElementById('q-residualValue');
         if (qResidualInput) {
             qResidualInput.value = toMoneyString(residualTotal);
         }
 
-        // Enganche se calcula sobre el SUBTOTAL (sin IVA), como en arrendamiento
-        const engancheSubtotal = invoiceSubtotal * dpPercent;
+        let engancheSubtotal = 0;
+        let commissionRate = 0;
+        let amountToFinance = 0;
+
+        if (leaseType === 'Financiero') {
+            engancheSubtotal = rawValue * dpPercent;
+            commissionRate = 0;
+            amountToFinance = invoiceSubtotal * (1 - dpPercent);
+        } else {
+            engancheSubtotal = invoiceSubtotal * dpPercent;
+            commissionRate = invoiceTotal > 1000000 ? 0.02 : 0.03;
+            amountToFinance = invoiceSubtotal - engancheSubtotal;
+        }
+
         const engancheIva = engancheSubtotal * 0.16;
         const engancheTotal = engancheSubtotal + engancheIva;
-        const commissionRate = invoiceTotal > 1000000 ? 0.02 : 0.03;
         const commissionSubtotal = invoiceTotal * commissionRate;
         const commissionTotal = commissionSubtotal * 1.16; // Comisión ya con IVA incluido
         // Pago inicial = enganche + IVA enganche + comisión (ya con IVA)
         const initialPaymentSubtotal = engancheSubtotal + commissionSubtotal;
         const initialPaymentTotal = engancheTotal + commissionTotal;
-
-        // Se financia el SUBTOTAL menos el enganche (sin IVA)
-        const amountToFinance = invoiceSubtotal - engancheSubtotal;
         let totalMonthlyRent = 0;
         let baseMonthlyRent = 0;
         let amortizationRows = '';
@@ -183,11 +320,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const tableBody = document.querySelector('#amortization-table tbody');
 
         if (amountToFinance > 0) {
-            const r = getMonthlyRate(annualInterest, yearBase);
+            const r = getMonthlyRate(annualInterest, yearBase, leaseType);
             baseMonthlyRent = calculatePMT(r, months, amountToFinance, residualValue);
             totalMonthlyRent = baseMonthlyRent * 1.16; // Add IVA to monthly payment
 
             let balance = amountToFinance;
+            currentAmortizationData = [];
+
             for (let i = 1; i <= months; i++) {
                 const interest = balance * r;
                 let principal = baseMonthlyRent - interest;
@@ -199,24 +338,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const endBalance = balance - principal;
 
-                amortizationRows += `
-                    <tr>
-                        <td style="text-align:center">${i}</td>
-                        <td style="text-align:right">$${balance.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td style="text-align:right">$${baseMonthlyRent.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <small style="color:#94a3b8; font-size:10px;">+IVA</small></td>
-                        <td style="text-align:right; color:#dc2626;">$${interest.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td style="text-align:right; color:#16a34a;">$${principal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td style="text-align:right; font-weight:600;">$${Math.max(0, endBalance).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    </tr>
-                `;
+                currentAmortizationData.push({
+                    month: i,
+                    balance: balance,
+                    baseMonthlyRent: baseMonthlyRent,
+                    interest: interest,
+                    principal: principal,
+                    endBalance: endBalance
+                });
 
                 balance = endBalance;
             }
 
-            tableBody.innerHTML = amortizationRows;
             tableContainer.style.display = 'block';
+            renderAmortizationYear(1);
         } else {
             tableContainer.style.display = 'none';
+            currentAmortizationData = [];
         }
 
         document.getElementById('preview-initial-payment').innerHTML = `$${initialPaymentSubtotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style="font-size: 14px; font-weight: 500; color: #64748b;">+ IVA = $${initialPaymentTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`;
@@ -226,7 +364,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (previewMonthsTag) previewMonthsTag.textContent = months;
     }
 
-    const inputsToWatch = document.querySelectorAll('#q-invoiceValue, #q-downpayment, #q-months, #q-interestRate, #q-yearBase, #q-residualValue, #q-type');
+    const inputsToWatch = document.querySelectorAll('#q-invoiceValue, #q-downpayment, #q-months, #q-interestRate, #q-yearBase, #q-residualValue, #q-type, #q-leaseType, #q-asset');
+    
+    // Segmented Tabs for Lease Type
+    const leaseTabBtns = document.querySelectorAll('.lease-tab-btn');
+    const qLeaseTypeInput = document.getElementById('q-leaseType');
+    if (leaseTabBtns.length > 0 && qLeaseTypeInput) {
+        leaseTabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const val = btn.getAttribute('data-value');
+                qLeaseTypeInput.value = val;
+
+                leaseTabBtns.forEach(b => {
+                    if (b === btn) {
+                        b.classList.add('active');
+                        b.style.background = 'var(--primary)';
+                        b.style.color = 'white';
+                        b.style.boxShadow = '0 4px 12px rgba(15, 78, 136, 0.25)';
+                    } else {
+                        b.classList.remove('active');
+                        b.style.background = 'transparent';
+                        b.style.color = '#64748b';
+                        b.style.boxShadow = 'none';
+                    }
+                });
+
+                calculateLivePreview();
+            });
+        });
+    }
     
     // Handle 60 meses restriction for Camiones Seminuevos
     const qMonthsElem = document.getElementById('q-months');
@@ -260,6 +426,57 @@ document.addEventListener('DOMContentLoaded', async () => {
     inputsToWatch.forEach(input => input.addEventListener('input', calculateLivePreview));
     inputsToWatch.forEach(input => input.addEventListener('change', calculateLivePreview));
 
+    // WhatsApp Copy Summary Button
+    const btnCopyWhatsapp = document.getElementById('btn-copy-whatsapp');
+    if (btnCopyWhatsapp) {
+        btnCopyWhatsapp.addEventListener('click', () => {
+            const client = document.getElementById('q-client').value || 'Cliente';
+            const leaseType = document.getElementById('q-leaseType').value || 'Puro';
+            const asset = document.getElementById('q-asset').value || 'Vehículo';
+            const condition = document.getElementById('q-type').value || 'Nuevo';
+            const desc = document.getElementById('q-description').value || '';
+            const rawVal = parseMoney(document.getElementById('q-invoiceValue').value);
+            const months = document.getElementById('q-months').value || '12';
+
+            const initialPaymentText = document.getElementById('preview-initial-payment').innerText || '$0.00';
+            const monthlyPaymentText = document.getElementById('preview-monthly-payment').innerText || '$0.00';
+
+            let msg = `*COTIZACIÓN CREDIAN*\n`;
+            msg += `• *Cliente:* ${client}\n`;
+            msg += `• *Esquema:* Arrendamiento ${leaseType}\n`;
+            msg += `• *Activo:* ${asset} (${condition}) ${desc ? '- ' + desc : ''}\n`;
+            msg += `• *Valor Factura:* $${rawVal.toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2})} MXN\n`;
+            msg += `• *Pago Inicial (Eng+Com):* ${initialPaymentText}\n`;
+            msg += `• *Renta Mensual (${months} meses):* ${monthlyPaymentText}\n`;
+
+            if (leaseType === 'Puro') {
+                const residualText = document.getElementById('preview-residual-value').innerText || '$0.00';
+                msg += `• *Valor Residual Base:* ${residualText}\n`;
+            }
+
+            msg += `\n*CREDIAN Cotizador*`;
+
+            navigator.clipboard.writeText(msg).then(() => {
+                if (window.showToast) window.showToast('Resumen copiado al portapapeles', 'success');
+            }).catch(() => {
+                if (window.showToast) window.showToast('No se pudo copiar el resumen.', 'error');
+            });
+        });
+    }
+
+    // Clear Form Button
+    const btnClearForm = document.getElementById('btn-clear-form');
+    if (btnClearForm) {
+        btnClearForm.addEventListener('click', () => {
+            document.getElementById('q-description').value = '';
+            document.getElementById('q-invoiceValue').value = '';
+            document.getElementById('q-asset').value = '';
+            document.getElementById('q-type').value = user.fixedCondition && user.fixedCondition !== 'Libre' ? user.fixedCondition : 'Nuevo';
+            calculateLivePreview();
+            if (window.showToast) window.showToast('Formulario limpiado', 'info');
+        });
+    }
+
     // Handle Form Submit
     const form = document.getElementById('quote-form');
     form.addEventListener('submit', async (e) => {
@@ -289,43 +506,61 @@ document.addEventListener('DOMContentLoaded', async () => {
                 invoiceSubtotal = rawValue / 1.16;
             }
 
-            let resPct = 0.20;
-            if (months === 12) resPct = 0.38;
-            else if (months === 18) resPct = 0.30;
-            else if (months === 24) resPct = 0.26;
-            else if (months === 36) resPct = 0.20;
-            else if (months === 48) resPct = 0.15;
-            else if (months === 60) resPct = 0.10;
+            const leaseType = document.getElementById('q-leaseType') ? document.getElementById('q-leaseType').value : 'Puro';
+            let resPct = 0;
 
-            const conditionType = document.getElementById('q-type').value;
-            if (conditionType === 'Seminuevo') {
-                resPct = resPct / 2;
+            if (leaseType !== 'Financiero') {
+                resPct = 0.20;
+                if (months === 12) resPct = 0.38;
+                else if (months === 18) resPct = 0.30;
+                else if (months === 24) resPct = 0.26;
+                else if (months === 36) resPct = 0.20;
+                else if (months === 48) resPct = 0.15;
+                else if (months === 60) resPct = 0.10;
+
+                const conditionType = document.getElementById('q-type').value;
+                const assetType = document.getElementById('q-asset').value;
+                if (assetType === 'Camiones' && conditionType === 'Seminuevo') {
+                    if (months === 12 || months === 18 || months === 24) resPct = 0.10;
+                    else if (months === 36 || months === 48 || months === 60) resPct = 0.05;
+                } else if (conditionType === 'Seminuevo') {
+                    resPct = resPct / 2;
+                }
             }
 
             const residualSubtotal = invoiceTotal * resPct;
 
-            // Enganche sobre SUBTOTAL
-            const engancheSubtotal = invoiceSubtotal * dpPercent;
+            let engancheSubtotal = 0;
+            let commissionRate = 0;
+            let amountToFinance = 0;
+
+            if (leaseType === 'Financiero') {
+                engancheSubtotal = rawValue * dpPercent;
+                commissionRate = 0;
+                amountToFinance = invoiceSubtotal * (1 - dpPercent);
+            } else {
+                engancheSubtotal = invoiceSubtotal * dpPercent;
+                commissionRate = invoiceTotal > 1000000 ? 0.02 : 0.03;
+                amountToFinance = invoiceSubtotal - engancheSubtotal;
+            }
+
             const engancheIva = engancheSubtotal * 0.16;
             const engancheTotal = engancheSubtotal + engancheIva;
-            const commissionRate = invoiceTotal > 1000000 ? 0.02 : 0.03;
             const commissionSubtotal = invoiceTotal * commissionRate;
             const commissionTotal = commissionSubtotal * 1.16; // Comisión ya con IVA incluido
             // Pago inicial = enganche + IVA enganche + comisión (ya con IVA)
             const initialPaymentTotal = engancheTotal + commissionTotal;
 
-            // Financiar SUBTOTAL - enganche
-            const amountToFinance = invoiceSubtotal - engancheSubtotal;
-
             let totalMonthlyRent = 0;
             if (amountToFinance > 0) {
-                const r = getMonthlyRate(annualInterest, yearBase);
+                const r = getMonthlyRate(annualInterest, yearBase, leaseType);
                 const baseMonthlyRent = calculatePMT(r, months, amountToFinance, residualSubtotal);
                 totalMonthlyRent = baseMonthlyRent * 1.16;
             }
 
             const generalData = {
                 client: document.getElementById('q-client').value,
+                leaseType: document.getElementById('q-leaseType') ? document.getElementById('q-leaseType').value : 'Puro',
                 asset: document.getElementById('q-asset').value,
                 type: document.getElementById('q-type').value,
                 description: document.getElementById('q-description').value,
@@ -355,7 +590,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
 
             const data = await window.api.createQuote({ generalData, terms: [termData] });
-            alert('Cotización guardada exitosamente. Generando PDF...');
+            if (window.showToast) window.showToast('¡Cotización guardada exitosamente! Generando PDF...', 'success');
 
             // Generate PDF logic passing custom extras
             generatePDF({ ...data.quote, valueType: valueType, residualAmount: residualSubtotal, montoAFinanciar: amountToFinance }, user);
@@ -395,7 +630,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 tr.innerHTML = `
                     <td>${date}</td>
                     <td>${q.generalData.client}</td>
-                    <td>${q.generalData.asset}</td>
+                    <td>${q.generalData.asset} (${q.generalData.leaseType || 'Puro'})</td>
                     <td>$${q.generalData.invoiceValue.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td>${q.generalData.currency}</td>
                     <td>
@@ -444,19 +679,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             let baseRent = 0;
             let rentWithIva = 0;
 
-            let resPct = 0.20;
-            if (termMonths === 12) resPct = 0.38;
-            else if (termMonths === 18) resPct = 0.30;
-            else if (termMonths === 24) resPct = 0.26;
-            else if (termMonths === 36) resPct = 0.20;
-            else if (termMonths === 48) resPct = 0.15;
-            else if (termMonths === 60) resPct = 0.10;
+            let resPct = 0;
+            const leaseType = generalData.leaseType || 'Puro';
 
-            if (generalData.asset === 'Camiones' && generalData.type === 'Seminuevo') {
-                if (termMonths === 12 || termMonths === 18 || termMonths === 24) resPct = 0.10;
-                else if (termMonths === 36 || termMonths === 48 || termMonths === 60) resPct = 0.05;
-            } else if (generalData.type === 'Seminuevo') {
-                resPct = resPct / 2;
+            if (leaseType !== 'Financiero') {
+                resPct = 0.20;
+                if (termMonths === 12) resPct = 0.38;
+                else if (termMonths === 18) resPct = 0.30;
+                else if (termMonths === 24) resPct = 0.26;
+                else if (termMonths === 36) resPct = 0.20;
+                else if (termMonths === 48) resPct = 0.15;
+                else if (termMonths === 60) resPct = 0.10;
+
+                if (generalData.asset === 'Camiones' && generalData.type === 'Seminuevo') {
+                    if (termMonths === 12 || termMonths === 18 || termMonths === 24) resPct = 0.10;
+                    else if (termMonths === 36 || termMonths === 48 || termMonths === 60) resPct = 0.05;
+                } else if (generalData.type === 'Seminuevo') {
+                    resPct = resPct / 2;
+                }
             }
 
             const invoiceSubtotal = generalData.netValue;
@@ -517,9 +757,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
+        const activeLeaseType = generalData.leaseType || 'Puro';
+        const isFinanciero = activeLeaseType === 'Financiero';
+
         container.innerHTML = `
-            <div style="text-align:center; margin-bottom: 20px;">
-                <h3 style="color:#104289; font-size: 22px; font-weight: 600;">Cotización de Arrendamiento</h3>
+            <div style="text-align:center; margin-bottom: 16px;">
+                <h3 style="color:#104289; font-size: 22px; font-weight: 700; margin:0 0 4px 0;">Cotización de Arrendamiento ${activeLeaseType}</h3>
+                <span style="display:inline-block; background:${isFinanciero ? '#0284c7' : '#104289'}; color:white; padding:3px 14px; border-radius:12px; font-size:11px; font-weight:600;">
+                    ${isFinanciero ? 'Esquema: Arrendamiento Financiero (Sin Valor Residual)' : 'Esquema: Arrendamiento Puro (Con Opción a Compra)'}
+                </span>
             </div>
 
             <table style="width:100%; border-collapse: collapse; font-size:12px; margin-bottom: 20px;">
@@ -592,7 +838,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div style="font-size: 8px; color: #64748b; line-height: 1.5; margin-top: 18px; border-top: 1px solid #cbd5e1; padding-top: 10px;">
                 <p style="font-weight: bold; margin-bottom: 4px; color: #334155;">NOTAS LEGALES Y CONDICIONES:</p>
                 <p><b>Vigencia:</b> 15 días naturales a partir de su emisión. Cantidades en moneda nacional con IVA.</p>
-                <p><b>Carácter Informativo:</b> Esta proyección es una simulación de Arrendamiento Puro; no constituye una oferta vinculante, autorización de crédito, ni compromiso de contratación por parte de CREDIAN.</p>
+                <p><b>Carácter Informativo:</b> Esta proyección es una simulación de <b>Arrendamiento ${activeLeaseType}</b>; no constituye una oferta vinculante, autorización de crédito, ni compromiso de contratación por parte de CREDIAN.</p>
+                <p><b>Transferencia / Valor Residual:</b> ${isFinanciero ? 'En el Arrendamiento Financiero, la propiedad del activo se transfiere al arrendatario al término de las rentas estipuladas, sin pago adicional de valor residual.' : 'Al término del contrato de Arrendamiento Puro, el cliente podrá optar por la compra del vehículo pagando el valor residual, la devolución de la unidad o la renovación del arrendamiento.'}</p>
                 <p><b>Variabilidad:</b> Las rentas, condiciones y gastos accesorios podrán variar tras la evaluación del perfil crediticio del cliente y las políticas vigentes al momento de la firma del contrato.</p>
                 <p><b>Deslinde de Responsabilidad:</b> CREDIAN no se responsabiliza por errores de captura o información ofrecida por terceros (agencias o lotes) ajenos a esta institución.</p>
                 <p><b>Gastos:</b> No se incluyen seguros, placas ni contribuciones derivadas del uso de la unidad, salvo pacto en contrario.</p>

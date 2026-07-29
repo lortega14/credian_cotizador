@@ -71,6 +71,19 @@
             <div id="view-new-quote">
                 <div class="glass-panel" style="padding: 2rem;">
                     <form id="quote-form">
+                        <div style="margin-bottom: 2rem;">
+                            <label style="display: block; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 0.75rem;">Tipo de Arrendamiento</label>
+                            <div class="segmented-control" style="display: inline-flex; background: rgba(0, 0, 0, 0.05); padding: 5px; border-radius: 14px; gap: 6px; width: 100%; max-width: 520px; border: 1px solid rgba(0,0,0,0.06);">
+                                <button type="button" class="lease-tab-btn active" data-value="Puro" style="flex: 1; padding: 12px 20px; border: none; border-radius: 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(15, 78, 136, 0.25);">
+                                    Arrendamiento Puro
+                                </button>
+                                <button type="button" class="lease-tab-btn" data-value="Financiero" style="flex: 1; padding: 12px 20px; border: none; border-radius: 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); background: transparent; color: #64748b;">
+                                    Arrendamiento Financiero
+                                </button>
+                            </div>
+                            <input type="hidden" id="q-leaseType" value="Puro">
+                        </div>
+
                         <h3>Datos del Vehículo</h3>
                         <div class="grid-2">
                             <div class="form-group">
@@ -143,7 +156,7 @@
                                     <option value="60">60 Meses</option>
                                 </select>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" id="group-residual-value">
                                 <label>Valor Residual Con IVA</label>
                                 <input type="text" id="q-residualValue" value=""
                                     style="background-color: #e2e8f0; color: #475569; font-weight: bold;" readonly
@@ -153,23 +166,23 @@
 
                         <div class="glass-panel"
                             style="margin-top: 2rem; background: #f8fafc; padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: 8px;">
-                            <h4 style="margin-bottom: 1rem; color: #104289;">Resumen Automático</h4>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h4 style="margin: 0; color: #104289;">Resumen Automático</h4>
+                                <span id="preview-lease-type-badge" style="background: var(--primary); color: white; padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">Arrendamiento Puro</span>
+                            </div>
                             <div class="grid-3">
                                 <div>
-                                    <p style="font-size: 14px; color: #64748b; margin-bottom: 5px;">Pago Inicial Base
-                                        (Eng. + Com.)</p>
+                                    <p style="font-size: 14px; color: #64748b; margin-bottom: 5px;">Pago Inicial Base (Eng. + Com.)</p>
                                     <p style="font-size: 20px; font-weight: bold; color: #0f172a;"
                                         id="preview-initial-payment">$0.00</p>
                                 </div>
                                 <div>
-                                    <p style="font-size: 14px; color: #64748b; margin-bottom: 5px;">Renta Mensual Base
-                                        a <span id="preview-months">12</span> Meses</p>
+                                    <p style="font-size: 14px; color: #64748b; margin-bottom: 5px;">Renta Mensual Base a <span id="preview-months">12</span> Meses</p>
                                     <p style="font-size: 20px; font-weight: bold; color: #3ca65a;"
                                         id="preview-monthly-payment">$0.00</p>
                                 </div>
-                                <div>
-                                    <p style="font-size: 14px; color: #64748b; margin-bottom: 5px;">Valor Residual Base
-                                    </p>
+                                <div id="preview-residual-container">
+                                    <p style="font-size: 14px; color: #64748b; margin-bottom: 5px;">Valor Residual Base</p>
                                     <p style="font-size: 20px; font-weight: bold; color: #104289;"
                                         id="preview-residual-value">$0.00</p>
                                 </div>
@@ -177,14 +190,17 @@
                         </div>
 
                         <div id="amortization-table-container" style="margin-top: 2rem; display: none;">
-                            <h4 style="margin-bottom: 1rem; color: #104289;">Tabla de Amortización</h4>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 10px;">
+                                <h4 style="margin: 0; color: #104289;">Tabla de Amortización</h4>
+                                <div id="amortization-year-tabs" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+                            </div>
                             <div class="table-container">
                                 <table id="amortization-table" class="companies-table" style="font-size: 13px;">
                                     <thead>
                                         <tr>
                                             <th>Mes</th>
                                             <th style="text-align:right">Saldo Inicial</th>
-                                            <th style="text-align:right">Pago</th>
+                                            <th style="text-align:right">Pago (con IVA)</th>
                                             <th style="text-align:right">Interés</th>
                                             <th style="text-align:right">Capital</th>
                                             <th style="text-align:right">Saldo Final</th>
@@ -195,11 +211,18 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <div id="amortization-year-summary" class="glass-panel" style="margin-top: 1rem; padding: 1rem 1.25rem; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;"></div>
                         </div>
 
-                        <div style="margin-top: 2rem; text-align: right;">
-                            <button type="submit" class="btn btn-primary" id="btn-save-quote">Guardar y Generar
-                                PDF</button>
+                        <div style="margin-top: 2rem; display: flex; justify-content: flex-end; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-outline" id="btn-clear-form" style="padding: 0.75rem 1.25rem; color: #64748b; border-color: #cbd5e1; background: transparent;">Limpiar</button>
+                            <button type="button" class="btn" id="btn-copy-whatsapp" style="background: rgba(51, 173, 114, 0.12); color: #15803d; border: 1.5px solid rgba(51, 173, 114, 0.4); padding: 0.75rem 1.25rem; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; border-radius: 12px; cursor: pointer; transition: all 0.3s ease;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                <span>Copiar para WhatsApp</span>
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="btn-save-quote" style="padding: 0.75rem 1.75rem;">
+                                Guardar y Generar PDF
+                            </button>
                         </div>
                     </form>
                 </div>

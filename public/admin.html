@@ -153,8 +153,11 @@
 
                 <!-- Directory -->
                 <div class="glass-panel" style="padding: 2rem;">
-                    <h3>Directorio de Empresas</h3>
-                    <div class="table-container" style="margin-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 1rem;">
+                        <h3 style="margin: 0;">Directorio de Empresas</h3>
+                        <input type="text" id="admin-search-company" placeholder="Buscar por nombre o correo..." style="max-width: 300px; padding: 0.6rem 1rem; font-size: 0.85rem;">
+                    </div>
+                    <div class="table-container">
                         <table id="companies-table">
                             <thead>
                                 <tr>

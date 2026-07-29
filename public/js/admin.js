@@ -95,34 +95,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    let allCompaniesCache = [];
+
     async function loadCompaniesData() {
         try {
-            const users = await window.api.getCompanyUsers();
-            const tbody = document.querySelector('#companies-table tbody');
-            tbody.innerHTML = '';
-
-            if (users && users.length > 0) {
-                users.forEach(user => {
-                    const row = document.createElement('tr');
-                    // Check if name is needed, or just companyName
-                    const condText = (user.fixedCondition && user.fixedCondition !== 'Libre') ? `<span style="font-size:11px; background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:4px; margin-left:8px;">Solo ${user.fixedCondition}</span>` : '';
-                    row.innerHTML = `
-                        <td>${user.companyName} ${condText}</td>
-                        <td>${user.email}</td>
-                        <td>${new Date(user.createdAt).toLocaleDateString()}</td>
-                        <td style="text-align:center;">
-                            <button class="btn btn-secondary" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="window.openEditCompanyModal('${user._id}', '${user.companyName}', '${user.email}', '${user.fixedCondition || 'Libre'}')">Editar</button>
-                            <button class="btn btn-outline" style="padding:4px 8px; font-size:12px; color:var(--danger); border-color:var(--danger);" onclick="window.deleteCompany('${user._id}')">Eliminar</button>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            } else {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No hay empresas registradas</td></tr>';
-            }
+            allCompaniesCache = await window.api.getCompanyUsers();
+            renderCompaniesTable(allCompaniesCache);
         } catch (e) {
             console.error('Error cargando empresas', e);
         }
+    }
+
+    function renderCompaniesTable(users) {
+        const tbody = document.querySelector('#companies-table tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (users && users.length > 0) {
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                const condText = (user.fixedCondition && user.fixedCondition !== 'Libre') ? `<span style="font-size:11px; background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:4px; margin-left:8px;">Solo ${user.fixedCondition}</span>` : '';
+                row.innerHTML = `
+                    <td>${user.companyName} ${condText}</td>
+                    <td>${user.email}</td>
+                    <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+                    <td style="text-align:center;">
+                        <button class="btn btn-secondary" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="window.openEditCompanyModal('${user._id}', '${user.companyName}', '${user.email}', '${user.fixedCondition || 'Libre'}')">Editar</button>
+                        <button class="btn btn-outline" style="padding:4px 8px; font-size:12px; color:var(--danger); border-color:var(--danger);" onclick="window.deleteCompany('${user._id}')">Eliminar</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 1.5rem; color: #64748b;">No se encontraron empresas</td></tr>';
+        }
+    }
+
+    const searchInput = document.getElementById('admin-search-company');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase().trim();
+            if (!q) {
+                renderCompaniesTable(allCompaniesCache);
+            } else {
+                const filtered = allCompaniesCache.filter(u => 
+                    (u.companyName && u.companyName.toLowerCase().includes(q)) || 
+                    (u.email && u.email.toLowerCase().includes(q))
+                );
+                renderCompaniesTable(filtered);
+            }
+        });
     }
 
     // PDF Generation
