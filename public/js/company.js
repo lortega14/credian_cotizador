@@ -712,8 +712,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ? 'background:#dbeafe;'
                 : '';
             const cellStyle = isSelected
-                ? 'font-weight:700; color:#1e40af;'
-                : 'color:#334155;';
+                ? 'font-weight:700; color:#104289;'
+                : 'font-weight:600; color:#0f172a;';
             const badge = isSelected
                 ? ' <span style="background:#2563eb; color:#fff; font-size:7px; padding:2px 5px; border-radius:3px; margin-left:3px; vertical-align:middle; letter-spacing:0.5px;">✔ SELECCIONADO</span>'
                 : '';
@@ -761,43 +761,81 @@ document.addEventListener('DOMContentLoaded', async () => {
         const isFinanciero = activeLeaseType === 'Financiero';
 
         container.innerHTML = `
+            <style>
+                #print-container * {
+                    color: #000000 !important;
+                    opacity: 1 !important;
+                    font-family: Arial, Helvetica, sans-serif !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                #print-container h3, #print-container h4 {
+                    color: #104289 !important;
+                }
+                #print-container th {
+                    background-color: #104289 !important;
+                    color: #ffffff !important;
+                    font-weight: 700 !important;
+                }
+                #print-container .text-green {
+                    color: #16a34a !important;
+                    font-weight: 700 !important;
+                }
+                #print-container .text-residual {
+                    color: #92400e !important;
+                    font-weight: 700 !important;
+                }
+                #print-container .badge-selected {
+                    background-color: #2563eb !important;
+                    color: #ffffff !important;
+                    font-weight: 700 !important;
+                }
+                #print-container .pdf-row-selected {
+                    background-color: #dbeafe !important;
+                }
+                #print-container .pdf-row-selected td {
+                    color: #104289 !important;
+                    font-weight: 700 !important;
+                }
+            </style>
+
             <div style="text-align:center; margin-bottom: 16px;">
-                <h3 style="color:#104289; font-size: 22px; font-weight: 700; margin:0 0 4px 0;">Cotización de Arrendamiento ${activeLeaseType}</h3>
-                <span style="display:inline-block; background:${isFinanciero ? '#0284c7' : '#104289'}; color:white; padding:3px 14px; border-radius:12px; font-size:11px; font-weight:600;">
+                <h3 style="color:#104289 !important; font-size: 22px; font-weight: 700; margin:0 0 4px 0;">Cotización de Arrendamiento ${activeLeaseType}</h3>
+                <span style="display:inline-block; background:${isFinanciero ? '#0284c7' : '#104289'} !important; color:#ffffff !important; padding:3px 14px; border-radius:12px; font-size:11px; font-weight:600;">
                     ${isFinanciero ? 'Esquema: Arrendamiento Financiero (Sin Valor Residual)' : 'Esquema: Arrendamiento Puro (Con Opción a Compra)'}
                 </span>
             </div>
 
             <table style="width:100%; border-collapse: collapse; font-size:12px; margin-bottom: 20px;">
                 <tr>
-                    <td style="padding:4px; font-weight:bold; width:25%; color:#555;">Fecha:</td>
-                    <td style="padding:4px; font-weight: 500;">${new Date(quote.createdAt).toLocaleDateString()}</td>
-                    <td style="padding:4px; font-weight:bold; width:25%; color:#555;">Moneda:</td>
-                    <td style="padding:4px; font-weight: 500;">${generalData.currency}</td>
+                    <td style="padding:4px; font-weight:bold; width:25%;">Fecha:</td>
+                    <td style="padding:4px; font-weight:600;">${new Date(quote.createdAt).toLocaleDateString()}</td>
+                    <td style="padding:4px; font-weight:bold; width:25%;">Moneda:</td>
+                    <td style="padding:4px; font-weight:600;">${generalData.currency}</td>
                 </tr>
                 <tr>
-                    <td style="padding:4px; font-weight:bold; color:#555;">Cliente:</td>
-                    <td style="padding:4px; font-weight: 500;">${generalData.client}</td>
-                    <td style="padding:4px; font-weight:bold; color:#555;">Valor Factura (con IVA):</td>
-                    <td style="padding:4px; font-weight: 500;">$${fmt(generalData.invoiceValue)}</td>
+                    <td style="padding:4px; font-weight:bold;">Cliente:</td>
+                    <td style="padding:4px; font-weight:600;">${generalData.client}</td>
+                    <td style="padding:4px; font-weight:bold;">Valor Factura (con IVA):</td>
+                    <td style="padding:4px; font-weight:600;">$${fmt(generalData.invoiceValue)}</td>
                 </tr>
                 <tr>
-                    <td style="padding:4px; font-weight:bold; color:#555;">Activo:</td>
-                    <td style="padding:4px; font-weight: 500;">${generalData.asset} / ${generalData.type}</td>
-                    <td style="padding:4px; font-weight:bold; color:#555;">Pago Inicial:</td>
-                    <td style="padding:4px; font-weight: 500;">${dpPercentText}</td>
+                    <td style="padding:4px; font-weight:bold;">Activo:</td>
+                    <td style="padding:4px; font-weight:600;">${generalData.asset} / ${generalData.type}</td>
+                    <td style="padding:4px; font-weight:bold;">Pago Inicial:</td>
+                    <td style="padding:4px; font-weight:600;">${dpPercentText}</td>
                 </tr>
             </table>
 
-            <h4 style="margin-bottom: 8px; border-bottom: 2px solid #104289; padding-bottom: 4px; font-size: 14px; color: #104289;">Comparativo de Plazos</h4>
+            <h4 style="margin-bottom: 8px; border-bottom: 2px solid #104289 !important; padding-bottom: 4px; font-size: 14px; color: #104289 !important;">Comparativo de Plazos</h4>
             <table style="width:100%; border-collapse: collapse; font-size:11px; margin-bottom: 20px;">
                 <thead>
-                    <tr style="background-color:#1e3a5f; -webkit-print-color-adjust:exact; print-color-adjust:exact;">
-                        <th style="padding:7px 8px; background-color:#1e3a5f; color:#ffffff; text-align:left; font-size:10px; font-weight:700; border-bottom:2px solid #1e3a5f;">Plazo</th>
-                        <th style="padding:7px 8px; background-color:#1e3a5f; color:#ffffff; text-align:right; font-size:10px; font-weight:700; border-bottom:2px solid #1e3a5f;">Pago Inicial</th>
-                        <th style="padding:7px 8px; background-color:#1e3a5f; color:#ffffff; text-align:right; font-size:10px; font-weight:700; border-bottom:2px solid #1e3a5f;">Pago Inicial Total</th>
-                        <th style="padding:7px 8px; background-color:#1e3a5f; color:#ffffff; text-align:right; font-size:10px; font-weight:700; border-bottom:2px solid #1e3a5f;">Renta Mensual</th>
-                        <th style="padding:7px 8px; background-color:#1e3a5f; color:#ffffff; text-align:right; font-size:10px; font-weight:700; border-bottom:2px solid #1e3a5f;">Renta + IVA</th>
+                    <tr style="background-color:#104289 !important;">
+                        <th style="padding:7px 8px; background-color:#104289 !important; color:#ffffff !important; text-align:left; font-size:10px; font-weight:700;">Plazo</th>
+                        <th style="padding:7px 8px; background-color:#104289 !important; color:#ffffff !important; text-align:right; font-size:10px; font-weight:700;">Pago Inicial</th>
+                        <th style="padding:7px 8px; background-color:#104289 !important; color:#ffffff !important; text-align:right; font-size:10px; font-weight:700;">Pago Inicial Total</th>
+                        <th style="padding:7px 8px; background-color:#104289 !important; color:#ffffff !important; text-align:right; font-size:10px; font-weight:700;">Renta Mensual</th>
+                        <th style="padding:7px 8px; background-color:#104289 !important; color:#ffffff !important; text-align:right; font-size:10px; font-weight:700;">Renta + IVA</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -805,45 +843,43 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </tbody>
             </table>
 
-            <h4 style="margin-bottom: 8px; border-bottom: 2px solid #e1e7ec; padding-bottom: 4px; font-size: 14px; color: #1e293b;">Resumen Financiero</h4>
+            <h4 style="margin-bottom: 8px; border-bottom: 2px solid #cbd5e1 !important; padding-bottom: 4px; font-size: 14px; color: #000000 !important;">Resumen Financiero</h4>
             <table style="width:100%; border-collapse: collapse; font-size:12px; margin-bottom: 20px;">
                 <tr>
                     <!-- Columna Izquierda: Pago Inicial -->
                     <td style="width:50%; vertical-align: top; padding-right: 20px;">
                         <table style="width:100%; border-collapse: collapse;">
-                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Pago Inicial (${dpPercentText} s/subtotal)</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(engancheSubtotal)}</td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">IVA Pago Inicial</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(engancheIva)}</td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">Comisión Apertura (IVA incluido)</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right;">$${fmt(t.paymentSubtotal)}</td></tr>
-                            <tr><td style="padding:6px; background:#f8fafc; font-weight:bold;">TOTAL AL INICIO</td><td style="padding:6px; background:#f8fafc; text-align:right; font-weight:bold; color:#0f172a;">$${fmt(t.initialPaymentTotal)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #e2e8f0;">Pago Inicial (${dpPercentText} s/subtotal)</td><td style="padding:4px; border-bottom:1px solid #e2e8f0; text-align:right; font-weight:600;">$${fmt(engancheSubtotal)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #e2e8f0;">IVA Pago Inicial</td><td style="padding:4px; border-bottom:1px solid #e2e8f0; text-align:right; font-weight:600;">$${fmt(engancheIva)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">Comisión Apertura (IVA incluido)</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right; font-weight:600;">$${fmt(t.paymentSubtotal)}</td></tr>
+                            <tr><td style="padding:6px; background:#f8fafc !important; font-weight:bold;">TOTAL AL INICIO</td><td style="padding:6px; background:#f8fafc !important; text-align:right; font-weight:bold;">$${fmt(t.initialPaymentTotal)}</td></tr>
                         </table>
                     </td>
                     <!-- Columna Derecha: Rentas -->
                     <td style="width:50%; vertical-align: top;">
                         <table style="width:100%; border-collapse: collapse;">
-                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Monto a Financiar</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right; font-weight:bold;">$${fmt(amountToFinance)}</td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #f1f5f9;">Renta Mensual</td><td style="padding:4px; border-bottom:1px solid #f1f5f9; text-align:right;">$${fmt(t.monthlyRent)}</td></tr>
-                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">IVA de la Renta</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right;">$${fmt(t.monthlyRentIva)}</td></tr>
-                            <tr><td style="padding:6px; background:#f0f9ff; font-weight:bold;">TOTAL MENSUAL</td><td style="padding:6px; background:#f0f9ff; text-align:right; font-weight:bold; color:#3ca65a;">$${fmt(t.totalMonthlyRent)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #e2e8f0;">Monto a Financiar</td><td style="padding:4px; border-bottom:1px solid #e2e8f0; text-align:right; font-weight:bold;">$${fmt(amountToFinance)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #e2e8f0;">Renta Mensual</td><td style="padding:4px; border-bottom:1px solid #e2e8f0; text-align:right; font-weight:600;">$${fmt(t.monthlyRent)}</td></tr>
+                            <tr><td style="padding:4px; border-bottom:1px solid #cbd5e1;">IVA de la Renta</td><td style="padding:4px; border-bottom:1px solid #cbd5e1; text-align:right; font-weight:600;">$${fmt(t.monthlyRentIva)}</td></tr>
+                            <tr><td style="padding:6px; background:#f0f9ff !important; font-weight:bold;">TOTAL MENSUAL</td><td style="padding:6px; background:#f0f9ff !important; text-align:right; font-weight:bold;" class="text-green">$${fmt(t.totalMonthlyRent)}</td></tr>
                             ${residualAmount > 0 ? `
-                            <tr><td colspan="2" style="padding:8px 4px 2px; border-top:2px solid #e2e8f0;"></td></tr>
-                            <tr><td style="padding:6px; background:#fef3c7; font-weight:bold;">Valor Residual (IVA incluido)</td><td style="padding:6px; background:#fef3c7; text-align:right; font-weight:bold; color:#92400e;">$${fmt(residualTotal)}</td></tr>
+                            <tr><td colspan="2" style="padding:8px 4px 2px; border-top:2px solid #cbd5e1;"></td></tr>
+                            <tr><td style="padding:6px; background:#fef3c7 !important; font-weight:bold;">Valor Residual (IVA incluido)</td><td style="padding:6px; background:#fef3c7 !important; text-align:right; font-weight:bold;" class="text-residual">$${fmt(residualTotal)}</td></tr>
                             ` : ''}
                         </table>
                     </td>
                 </tr>
             </table>
 
-
-
-            <div style="font-size: 8px; color: #64748b; line-height: 1.5; margin-top: 18px; border-top: 1px solid #cbd5e1; padding-top: 10px;">
-                <p style="font-weight: bold; margin-bottom: 4px; color: #334155;">NOTAS LEGALES Y CONDICIONES:</p>
-                <p><b>Vigencia:</b> 15 días naturales a partir de su emisión. Cantidades en moneda nacional con IVA.</p>
-                <p><b>Carácter Informativo:</b> Esta proyección es una simulación de <b>Arrendamiento ${activeLeaseType}</b>; no constituye una oferta vinculante, autorización de crédito, ni compromiso de contratación por parte de CREDIAN.</p>
-                <p><b>Transferencia / Valor Residual:</b> ${isFinanciero ? 'En el Arrendamiento Financiero, la propiedad del activo se transfiere al arrendatario al término de las rentas estipuladas, sin pago adicional de valor residual.' : 'Al término del contrato de Arrendamiento Puro, el cliente podrá optar por la compra del vehículo pagando el valor residual, la devolución de la unidad o la renovación del arrendamiento.'}</p>
-                <p><b>Variabilidad:</b> Las rentas, condiciones y gastos accesorios podrán variar tras la evaluación del perfil crediticio del cliente y las políticas vigentes al momento de la firma del contrato.</p>
-                <p><b>Deslinde de Responsabilidad:</b> CREDIAN no se responsabiliza por errores de captura o información ofrecida por terceros (agencias o lotes) ajenos a esta institución.</p>
-                <p><b>Gastos:</b> No se incluyen seguros, placas ni contribuciones derivadas del uso de la unidad, salvo pacto en contrario.</p>
-                <p><b>Aprobación:</b> Toda operación está sujeta a la entrega de documentación completa y aprobación final por CREDIAN.</p>
+            <div style="font-size: 8px; line-height: 1.5; margin-top: 18px; border-top: 1px solid #cbd5e1; padding-top: 10px;">
+                <p style="font-weight: bold; margin-bottom: 4px;">NOTAS LEGALES Y CONDICIONES:</p>
+                <p style="margin:2px 0;"><b>Vigencia:</b> 15 días naturales a partir de su emisión. Cantidades en moneda nacional con IVA.</p>
+                <p style="margin:2px 0;"><b>Carácter Informativo:</b> Esta proyección es una simulación de <b>Arrendamiento ${activeLeaseType}</b>; no constituye una oferta vinculante, autorización de crédito, ni compromiso de contratación por parte de CREDIAN.</p>
+                <p style="margin:2px 0;"><b>Transferencia / Valor Residual:</b> ${isFinanciero ? 'En el Arrendamiento Financiero, la propiedad del activo se transfiere al arrendatario al término de las rentas estipuladas, sin pago adicional de valor residual.' : 'Al término del contrato de Arrendamiento Puro, el cliente podrá optar por la compra del vehículo pagando el valor residual, la devolución de la unidad o la renovación del arrendamiento.'}</p>
+                <p style="margin:2px 0;"><b>Variabilidad:</b> Las rentas, condiciones y gastos accesorios podrán variar tras la evaluación del perfil crediticio del cliente y las políticas vigentes al momento de la firma del contrato.</p>
+                <p style="margin:2px 0;"><b>Deslinde de Responsabilidad:</b> CREDIAN no se responsabiliza por errores de captura o información ofrecida por terceros (agencias o lotes) ajenos a esta institución.</p>
+                <p style="margin:2px 0;"><b>Gastos:</b> No se incluyen seguros, placas ni contribuciones derivadas del uso de la unidad, salvo pacto en contrario.</p>
+                <p style="margin:2px 0;"><b>Aprobación:</b> Toda operación está sujeta a la entrega de documentación completa y aprobación final por CREDIAN.</p>
             </div>
         `;
 
@@ -863,20 +899,41 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const firstPage = pdfDoc.getPages()[0];
                 const { width, height } = firstPage.getSize();
 
-                const canvas = await html2canvas(container, { scale: 2.5, windowWidth: 800, backgroundColor: null });
+                container.style.position = 'absolute';
+                container.style.left = '-9999px';
+                container.style.top = '0';
+                container.style.opacity = '1';
+                container.style.background = '#ffffff';
+
+                const canvas = await html2canvas(container, {
+                    scale: 2.5,
+                    windowWidth: 800,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false
+                });
+
+                container.style.position = 'absolute';
+                container.style.left = '-9999px';
+                container.style.opacity = '1';
+
                 const imgData = canvas.toDataURL('image/png');
                 const pngImage = await pdfDoc.embedPng(imgData);
 
-                // Scale content to fit on the single page
+                // Precise placement between header logo area and footer address area
+                const marginTop = 125; // 125pt space for top logo
+                const marginBottom = 45; // 45pt space for footer address
+                const availableHeight = height - marginTop - marginBottom;
+
                 const pdfWidth = width;
                 const contentHeight = (canvas.height * pdfWidth) / canvas.width;
-                const maxHeight = height - 20;
-                const finalHeight = Math.min(contentHeight, maxHeight);
-                const finalWidth = (finalHeight === maxHeight) ? (canvas.width * maxHeight) / canvas.height : pdfWidth;
+                const finalHeight = Math.min(contentHeight, availableHeight);
+                const finalWidth = (finalHeight === availableHeight) ? (canvas.width * availableHeight) / canvas.height : pdfWidth;
+                const startX = (width - finalWidth) / 2;
 
                 firstPage.drawImage(pngImage, {
-                    x: 0,
-                    y: height - finalHeight - 10,
+                    x: startX,
+                    y: height - marginTop - finalHeight,
                     width: finalWidth,
                     height: finalHeight
                 });
